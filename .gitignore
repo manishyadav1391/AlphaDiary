@@ -1,0 +1,72 @@
+# Environment & Secrets
+.env
+.env*.local
+.env.production
+!.env.example
+*.pem
+*.key
+
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+*/.venv/
+
+# Python Testing & Tooling
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+.coverage.*
+*.cover
+nosetests.xml
+coverage.xml
+
+# Node & Frontend (Next.js)
+node_modules/
+*/node_modules/
+.next/
+*/.next/
+out/
+*/out/
+build/
+dist/
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.turbo
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Database & Docker local mounts
+pgdata/
+*.sqlite3
+*.db
+
+# OS & Editor Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
