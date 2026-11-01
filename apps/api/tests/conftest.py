@@ -1,4 +1,31 @@
+"""Shared test fixtures.
+
+The suite runs against its own database, never the development one. The
+development database holds real broker credentials and real trades, and these
+tests create accounts, overwrite credentials and run syncs. Pointing
+DATABASE_URL at a `_test` database before any application module is imported
+is what keeps those two apart.
+"""
+
 from __future__ import annotations
+
+import os
+
+from sqlalchemy.engine import make_url
+
+_DEFAULT_URL = "postgresql+psycopg://tj:tj@db:5432/tj"
+
+
+def _test_database_url(url: str) -> str:
+    parsed = make_url(url)
+    name = parsed.database or "tj"
+    if not name.endswith("_test"):
+        name = f"{name}_test"
+    # str() on a URL masks the password; the engine needs the real one.
+    return parsed.set(database=name).render_as_string(hide_password=False)
+
+
+os.environ["DATABASE_URL"] = _test_database_url(os.environ.get("DATABASE_URL", _DEFAULT_URL))
 
 import datetime as dt
 import json
@@ -8,11 +35,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from alembic.config import Config
 from cryptography.fernet import Fernet
 from fastapi.testclient import TestClient
-from sqlalchemy import Connection
+from sqlalchemy import Connection, create_engine, text
 from sqlalchemy.orm import Session
 
+from alembic import command
 from app.config import get_settings
 from app.db import engine, get_session
 from app.main import app
@@ -23,6 +52,35 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 TEST_PASSWORD = "correct-horse-battery-staple"
 TEST_EMAIL = "owner@example.test"
+
+
+@pytest.fixture(scope="session", autouse=True)
+def prepare_test_database() -> None:
+    """Create the test database if it is missing and bring it to head.
+
+    Also refuses to run anywhere whose name does not end in `_test`, so a
+    misconfigured DATABASE_URL cannot point the suite at real data.
+    """
+    url = make_url(get_settings().database_url)
+    assert url.database and url.database.endswith("_test"), (
+        f"refusing to run tests against {url.database!r}"
+    )
+
+    admin = create_engine(url.set(database="postgres"), isolation_level="AUTOCOMMIT")
+    try:
+        with admin.connect() as connection:
+            exists = connection.execute(
+                text("select 1 from pg_database where datname = :name"),
+                {"name": url.database},
+            ).scalar()
+            if not exists:
+                connection.execute(text(f'create database "{url.database}"'))
+    finally:
+        admin.dispose()
+
+    config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+    config.set_main_option("script_location", str(Path(__file__).resolve().parents[1] / "alembic"))
+    command.upgrade(config, "head")
 
 
 @pytest.fixture(autouse=True)

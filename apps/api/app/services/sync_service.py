@@ -27,7 +27,7 @@ from sqlalchemy.orm import Session
 
 from app.db import engine
 from app.models import BrokerAccount, Fill, KiteOrder, SyncLog
-from app.services import token_store
+from app.services import charges, matcher, metrics, token_store
 from app.services.kite_client import KiteGateway, TokenExpired
 from app.services.kite_mapper import RejectedRow, jsonable, map_order, map_trade
 from app.timezone import ist_date, now_utc
@@ -161,23 +161,29 @@ def map_orders(
     return mapped, rejected
 
 
-# ------------------------------------------------- hooks for M3 and M4
+# --------------------------------------------------------- post-processing
 
 
-def rebuild_groups(session: Session, touched: set[tuple[UUID, int, str]]) -> None:
-    """Re-run the FIFO matcher for each touched (account, token, product).
+def process_touched(
+    session: Session,
+    account_id: UUID,
+    touched: set[tuple[UUID, int, str]],
+    order_ids: set[str],
+) -> None:
+    """Rebuild groups, price them and roll up the day (SRS 7.1, steps 3 to 6).
 
-    Implemented in M3 (FR-MATCH, SRS 7.2). Ingestion is complete without it:
-    the fills are stored and the matcher is a pure function of them.
+    Order matters: groups must exist before their charges can be attributed,
+    and charges must be attributed before the daily summary adds up net P&L.
+    All of it runs inside the caller's transaction, so a failure leaves no
+    half-built groups (NFR-03).
     """
+    if not touched:
+        return
 
-
-def compute_charges(session: Session, order_ids: set[str]) -> None:
-    """Per-order charges and allocation to fills. Implemented in M4 (SRS 7.3)."""
-
-
-def rebuild_daily_summary(session: Session, dates: set[dt.date]) -> None:
-    """Recompute `daily_summary` for the touched IST dates. M3."""
+    groups = matcher.rebuild_groups(session, touched)
+    charges.compute_charges(session, order_ids)
+    charges.apply_charges_to_groups(session, touched)
+    metrics.rebuild_daily_summary(session, account_id, {g.trade_date for g in groups})
 
 
 # --------------------------------------------------------------- the sync
@@ -285,9 +291,11 @@ def run_sync(
             touched = {
                 (row["account_id"], row["instrument_token"], row["product"]) for row in fill_rows
             }
-            rebuild_groups(session, touched)
-            compute_charges(session, {row["order_id"] for row in order_rows})
-            rebuild_daily_summary(session, {row["trade_date"] for row in fill_rows})
+            # Charges are priced from fills, so the order ids come from the
+            # fills themselves: a CSV-imported fill may have no order row.
+            order_ids = {row["order_id"] for row in fill_rows if row["order_id"]}
+            order_ids |= {row["order_id"] for row in order_rows}
+            process_touched(session, account.id, touched, order_ids)
         except Exception as exc:
             session.rollback()
             logger.error("Sync failed while storing", extra={"event": "sync_store_failed"})

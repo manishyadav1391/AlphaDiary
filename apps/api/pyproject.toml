@@ -16,6 +16,8 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path", "f
 [tool.ruff.lint.per-file-ignores]
 # Alembic imports the models package purely for its side effect on metadata.
 "alembic/env.py" = ["E402"]
+# conftest must redirect DATABASE_URL before importing any app module.
+"tests/conftest.py" = ["E402"]
 
 [tool.mypy]
 python_version = "3.12"

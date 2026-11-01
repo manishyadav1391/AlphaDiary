@@ -9,14 +9,17 @@ sensitive lands in the shell history or in a process listing.
 
 from __future__ import annotations
 
+import datetime as dt
 import getpass
+import json
 import sys
+from pathlib import Path
 
 from sqlalchemy import select
 
 from app.config import get_settings
 from app.db import SessionLocal
-from app.models import AppUser
+from app.models import AppUser, ChargeRateSet
 from app.security import EncryptionKeyError, encrypt
 from app.services import auth_service, token_store
 
@@ -94,9 +97,48 @@ def set_kite_credentials() -> int:
     return 0
 
 
+def seed() -> int:
+    """Load seed/charge_rates.json into charge_rate_set (FR-CHG-07).
+
+    Re-running replaces the set with the same effective_from, so correcting a
+    rate is an edit to the file plus `make seed`, not a manual SQL change.
+    """
+    settings = get_settings()
+    path = Path(settings.seed_dir) / "charge_rates.json"
+    if not path.exists():
+        raise SystemExit(f"Not found: {path}")
+
+    config = json.loads(path.read_text(encoding="utf-8"))
+    effective_from = dt.date.fromisoformat(config["effective_from"])
+    label = str(config.get("label") or path.name)
+
+    session = SessionLocal()
+    try:
+        existing = (
+            session.execute(
+                select(ChargeRateSet).where(ChargeRateSet.effective_from == effective_from)
+            )
+            .scalars()
+            .all()
+        )
+        for row in existing:
+            session.delete(row)
+        session.flush()
+        session.add(ChargeRateSet(effective_from=effective_from, label=label, config=config))
+        session.commit()
+    finally:
+        session.close()
+
+    print(f"Loaded charge rates effective {effective_from}: {label}")
+    for note in config.get("_source", {}).get("known_gaps", []):
+        print(f"  gap: {note}")
+    return 0
+
+
 COMMANDS = {
     "create-user": create_user,
     "set-kite-credentials": set_kite_credentials,
+    "seed": seed,
 }
 
 

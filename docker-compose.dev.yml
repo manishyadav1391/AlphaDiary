@@ -44,6 +44,9 @@ services:
       - ./apps/api/tests:/srv/api/tests
       - ./apps/api/pyproject.toml:/srv/api/pyproject.toml
       - ./apps/api/alembic.ini:/srv/api/alembic.ini
+      # Seed inputs live at the repo root; `make seed` loads them into the
+      # database, after which they are not needed at runtime.
+      - ./seed:/srv/seed:ro
     command: >
       uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     healthcheck:

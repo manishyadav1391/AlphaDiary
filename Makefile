@@ -46,9 +46,9 @@ fmt:
 	$(API) ruff format .
 	$(API) ruff check --fix .
 
-## Not built yet: seeding needs the charge rate sets (M4) and the holiday list.
+## Load seed/charge_rates.json into the database (FR-CHG-07).
 seed:
-	@echo "make seed is not implemented yet (needs seed/charge_rates.json and the holiday list)."; exit 1
+	$(API) python -m app.cli seed
 
 ## Create the single owner account (FR-AUTH-01). Prompts for email and password.
 create-user:

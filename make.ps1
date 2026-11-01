@@ -9,7 +9,8 @@
 #>
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('dev', 'down', 'logs', 'shell', 'migrate', 'migrate-check', 'test', 'lint', 'fmt')]
+    [ValidateSet('dev', 'down', 'logs', 'shell', 'migrate', 'migrate-check', 'test', 'lint', 'fmt',
+        'seed', 'create-user', 'kite-credentials')]
     [string]$Target = 'dev'
 )
 
@@ -42,4 +43,8 @@ switch ($Target) {
         Invoke-Api ruff format .
         Invoke-Api ruff check --fix .
     }
+    'seed' { Invoke-Api python -m app.cli seed }
+    # These prompt, so they need a terminal: no -T.
+    'create-user' { Invoke-Compose exec api python -m app.cli create-user }
+    'kite-credentials' { Invoke-Compose exec api python -m app.cli set-kite-credentials }
 }

@@ -138,19 +138,19 @@ One user: the owner. No roles. The app must still require a login because it hol
 
 ### 3.5 Assumptions to verify before relying on them
 
-| ID | Verify | Why it matters |
-| --- | --- | --- |
-| V1 | Trades and orders endpoints return only the current trading day | Decides how critical daily sync is |
-| V2 | If I log in after 3:45 PM (for example 6 PM), sync still returns that day’s trades, and until what time | Decides the late reminder window and catch-up sync |
-| V3 | Read-only calls work without a whitelisted static IP on the Personal plan | Hosting without a fixed IP |
-| V4 | The instruments dump is available on the Personal plan | Lot size, expiry, strike |
-| V5 | The login redirect supports `redirect_params` so a CSRF state value returns to the callback | Login security |
-| V6 | How quantity and price map to P&L for MCX (lots vs units, multiplier) | Correct commodity P&L |
-| V7 | Whether positions return `pnl` and `last_price` on the Personal plan | Optional open-position display |
-| V8 | Console tradebook CSV column names, date limits and format | CSV importer |
-| V9 | Current charge rates per segment (brokerage, STT, exchange fees, SEBI, stamp duty, GST) | Charges engine seed data |
-| V10 | WhatsApp Cloud API setup (template approval, test recipients) and Telegram bot setup | Reminder channels |
-| V11 | Source and format of the NSE holiday calendar | Skip reminders on holidays |
+| ID | Verify | Why it matters | Status |
+| --- | --- | --- | --- |
+| V1 | Trades and orders endpoints return only the current trading day | Decides how critical daily sync is | **Confirmed 1 Nov 2026.** A real login and sync returned the current day only. Daily sync is therefore mandatory; a missed day is recoverable only by CSV import. |
+| V2 | If I log in after 3:45 PM (for example 6 PM), sync still returns that day’s trades, and until what time | Decides the late reminder window and catch-up sync | **Partly confirmed 1 Nov 2026.** The day’s trades were still returned when logging in up to 6 PM IST. Behaviour after 6 PM is untested, so the late reminder window should not be pushed past it without a further check. |
+| V3 | Read-only calls work without a whitelisted static IP on the Personal plan | Hosting without a fixed IP | **Confirmed 1 Nov 2026.** The connect flow and sync ran from a machine with no whitelisted static IP. |
+| V4 | The instruments dump is available on the Personal plan | Lot size, expiry, strike | Not verified. |
+| V5 | The login redirect supports `redirect_params` so a CSRF state value returns to the callback | Login security | **Flow confirmed 1 Nov 2026**, mechanism not isolated. The callback accepts the state from `redirect_params` or from a signed cookie, so a successful login does not prove which one carried it. Not load-bearing either way. |
+| V6 | How quantity and price map to P&L for MCX (lots vs units, multiplier) | Correct commodity P&L | Not verified. |
+| V7 | Whether positions return `pnl` and `last_price` on the Personal plan | Optional open-position display | Not verified. |
+| V8 | Console tradebook CSV column names, date limits and format | CSV importer | Not verified. |
+| V9 | Current charge rates per segment (brokerage, STT, exchange fees, SEBI, stamp duty, GST) | Charges engine seed data | **Transcribed, not verified.** `seed/charge_rates.json` holds the rates published at https://zerodha.com/charges/ as read on 1 Nov 2026, with its gaps listed in the file. Still needs checking against a real contract note per FR-CHG acceptance. |
+| V10 | WhatsApp Cloud API setup (template approval, test recipients) and Telegram bot setup | Reminder channels | Not verified. |
+| V11 | Source and format of the NSE holiday calendar | Skip reminders on holidays | Not verified. |
 
 ## 4. Architecture and technology
 

@@ -1,0 +1,194 @@
+{
+  "_source": {
+    "url": "https://zerodha.com/charges/",
+    "retrieved": "2026-11-01",
+    "method": "Transcribed from Zerodha's published charges page, cross-checked with a second read of the same page.",
+    "warning": "VERIFY V9 is NOT closed by this file. Confirm these against a real contract note before trusting net P&L. FR-CHG-09 exists for exactly this reconciliation.",
+    "known_gaps": [
+      "Commodity SEBI fee: the page lists Rs 1/crore for agri and Rs 10/crore for non-agri. We cannot tell agri from non-agri without a commodity list, so the non-agri rate is used for all MCX trades. Agri commodity charges will be slightly high.",
+      "Commodity CTT on futures is the non-agri rate (0.01%). Agri is not printed on the page.",
+      "Commodity options CTT basis (premium or notional) is not stated on the page; premium is assumed, consistent with every other options segment.",
+      "Equity options STT also applies at 0.15% of intrinsic value on options bought and exercised at expiry. That needs settlement data we do not hold, so it is not modelled. Expiry exercises will be under-charged.",
+      "The page prints no effective date for the main table, so effective_from below is the date these were read, not the date they came into force."
+    ]
+  },
+  "effective_from": "2026-04-01",
+  "label": "Zerodha published rates, read 2026-11-01",
+  "rounding": "half_up_2dp",
+  "gst_rate": "18",
+  "_gst_note": "18% on brokerage + transaction charges + SEBI fee + other levy. Never on STT/CTT or stamp duty (FR-CHG-04).",
+  "_percent_note": "Every 'percent' is a percentage of the turnover of the applicable side. SEBI Rs 10/crore = 0.0001%. IPFT Rs 0.01/crore = 0.0000001%.",
+  "segments": {
+    "eq_intraday": {
+      "brokerage": {
+        "type": "min_of_flat_or_percent",
+        "flat": "20",
+        "percent": "0.03",
+        "side": "both"
+      },
+      "stt_ctt": { "type": "percent", "percent": "0.025", "side": "sell" },
+      "exchange_txn": {
+        "type": "percent",
+        "percent": "0.00307",
+        "side": "both",
+        "exchange_overrides": { "BSE": { "percent": "0.00375" } }
+      },
+      "sebi": { "type": "percent", "percent": "0.0001", "side": "both" },
+      "stamp": { "type": "percent", "percent": "0.003", "side": "buy" },
+      "other_levy": {
+        "type": "percent",
+        "percent": "0.0000001",
+        "side": "both",
+        "_note": "NSE IPFT, Rs 0.01 per crore on traded value."
+      }
+    },
+    "eq_delivery": {
+      "brokerage": { "type": "zero" },
+      "stt_ctt": { "type": "percent", "percent": "0.1", "side": "both" },
+      "exchange_txn": {
+        "type": "percent",
+        "percent": "0.00307",
+        "side": "both",
+        "exchange_overrides": { "BSE": { "percent": "0.00375" } }
+      },
+      "sebi": { "type": "percent", "percent": "0.0001", "side": "both" },
+      "stamp": { "type": "percent", "percent": "0.015", "side": "buy" },
+      "other_levy": {
+        "type": "percent",
+        "percent": "0.0000001",
+        "side": "both",
+        "_note": "NSE IPFT, Rs 0.01 per crore on traded value."
+      },
+      "dp": {
+        "type": "flat_per_sell_scrip_per_day",
+        "flat": "13.00",
+        "side": "sell",
+        "_note": "Rs 3.50 CDSL + Rs 9.50 Zerodha. GST of 18% is added by the engine, giving the published Rs 15.34. Charged once per scrip per day, not per order."
+      }
+    },
+    "fut": {
+      "brokerage": {
+        "type": "min_of_flat_or_percent",
+        "flat": "20",
+        "percent": "0.03",
+        "side": "both"
+      },
+      "stt_ctt": { "type": "percent", "percent": "0.05", "side": "sell" },
+      "exchange_txn": {
+        "type": "percent",
+        "percent": "0.00183",
+        "side": "both",
+        "exchange_overrides": { "BFO": { "percent": "0" } }
+      },
+      "sebi": { "type": "percent", "percent": "0.0001", "side": "both" },
+      "stamp": { "type": "percent", "percent": "0.002", "side": "buy" },
+      "other_levy": {
+        "type": "percent",
+        "percent": "0.0000001",
+        "side": "both",
+        "_note": "NSE IPFT, Rs 0.01 per crore on traded value."
+      }
+    },
+    "opt": {
+      "brokerage": { "type": "flat", "flat": "20", "side": "both" },
+      "stt_ctt": {
+        "type": "percent",
+        "percent": "0.15",
+        "side": "sell",
+        "_note": "On premium. Exercise STT on intrinsic value is not modelled."
+      },
+      "exchange_txn": {
+        "type": "percent",
+        "percent": "0.03553",
+        "side": "both",
+        "exchange_overrides": { "BFO": { "percent": "0.0325" } },
+        "_note": "On premium."
+      },
+      "sebi": { "type": "percent", "percent": "0.0001", "side": "both" },
+      "stamp": { "type": "percent", "percent": "0.003", "side": "buy" },
+      "other_levy": {
+        "type": "percent",
+        "percent": "0.0000001",
+        "side": "both",
+        "_note": "NSE IPFT, Rs 0.01 per crore on premium value."
+      }
+    },
+    "comm_fut": {
+      "brokerage": {
+        "type": "min_of_flat_or_percent",
+        "flat": "20",
+        "percent": "0.03",
+        "side": "both"
+      },
+      "stt_ctt": {
+        "type": "percent",
+        "percent": "0.01",
+        "side": "sell",
+        "_note": "Non-agri CTT. Agri is not printed on the source page."
+      },
+      "exchange_txn": { "type": "percent", "percent": "0.0021", "side": "both" },
+      "sebi": {
+        "type": "percent",
+        "percent": "0.0001",
+        "side": "both",
+        "_note": "Non-agri. Agri is Rs 1/crore."
+      },
+      "stamp": { "type": "percent", "percent": "0.002", "side": "buy" },
+      "other_levy": { "type": "zero", "_note": "IPFT is an NSE trust; MCX has none." }
+    },
+    "comm_opt": {
+      "brokerage": { "type": "flat", "flat": "20", "side": "both" },
+      "stt_ctt": {
+        "type": "percent",
+        "percent": "0.05",
+        "side": "sell",
+        "_note": "Basis not stated on the source page; premium assumed."
+      },
+      "exchange_txn": { "type": "percent", "percent": "0.0418", "side": "both" },
+      "sebi": { "type": "percent", "percent": "0.0001", "side": "both" },
+      "stamp": { "type": "percent", "percent": "0.003", "side": "buy" },
+      "other_levy": { "type": "zero" }
+    },
+    "cur_fut": {
+      "brokerage": {
+        "type": "min_of_flat_or_percent",
+        "flat": "20",
+        "percent": "0.03",
+        "side": "both"
+      },
+      "stt_ctt": { "type": "zero", "_note": "No STT on currency derivatives." },
+      "exchange_txn": {
+        "type": "percent",
+        "percent": "0.00035",
+        "side": "both",
+        "exchange_overrides": { "BCD": { "percent": "0.00045" } }
+      },
+      "sebi": { "type": "percent", "percent": "0.0001", "side": "both" },
+      "stamp": { "type": "percent", "percent": "0.0001", "side": "buy" },
+      "other_levy": {
+        "type": "percent",
+        "percent": "0.00005",
+        "side": "both",
+        "_note": "NSE IPFT, Rs 0.05 per lakh on turnover."
+      }
+    },
+    "cur_opt": {
+      "brokerage": { "type": "flat", "flat": "20", "side": "both" },
+      "stt_ctt": { "type": "zero", "_note": "No STT on currency derivatives." },
+      "exchange_txn": {
+        "type": "percent",
+        "percent": "0.0311",
+        "side": "both",
+        "exchange_overrides": { "BCD": { "percent": "0.001" } }
+      },
+      "sebi": { "type": "percent", "percent": "0.0001", "side": "both" },
+      "stamp": { "type": "percent", "percent": "0.0001", "side": "buy" },
+      "other_levy": {
+        "type": "percent",
+        "percent": "0.002",
+        "side": "both",
+        "_note": "NSE IPFT, Rs 2 per lakh on premium."
+      }
+    }
+  }
+}

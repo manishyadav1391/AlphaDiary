@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     kite_api_key: str = ""
     kite_api_secret: SecretStr = SecretStr("")
 
+    # Seed inputs (charge rate sets, holidays). Loaded by `make seed`.
+    seed_dir: str = "/srv/seed"
+
     # Session cookie (FR-AUTH-03)
     session_cookie_name: str = "tj_session"
     session_ttl_days: int = 7
