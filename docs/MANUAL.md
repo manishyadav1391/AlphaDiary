@@ -1,5 +1,6 @@
 # User manual
-
+docker compose exec api python -m app.cli create-user
+ docker compose -f docker-compose.dev.yml exec api python -m app.cli set-kite-credentials
 How to run your trading journal day to day.
 
 This is written for the person using the app, not the person building it. For
