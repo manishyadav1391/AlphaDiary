@@ -23,7 +23,15 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import ChargeRateSet, Fill, FillCharge, OrderCharge, TradeGroup, TradeGroupFill
+from app.models import (
+    ChargeRateSet,
+    Fill,
+    FillCharge,
+    Instrument,
+    OrderCharge,
+    TradeGroup,
+    TradeGroupFill,
+)
 
 logger = logging.getLogger("tj.charges")
 
@@ -107,8 +115,24 @@ def infer_instrument_type(exchange: str, tradingsymbol: str) -> str:
     raise UnknownSegment(f"cannot read an instrument type from {tradingsymbol}")
 
 
-def segment_for_fill(fill: Fill, instrument_type: str | None = None) -> str:
-    resolved = instrument_type or infer_instrument_type(fill.exchange, fill.tradingsymbol)
+def segment_for_fill(
+    fill: Fill,
+    instrument_type: str | None = None,
+    *,
+    session: Session | None = None,
+) -> str:
+    """The segment for one fill.
+
+    The instruments master is authoritative. Reading the type off the trading
+    symbol is the fallback for a symbol the dump does not carry.
+    """
+    resolved = instrument_type
+    if resolved is None and session is not None:
+        instrument = session.get(Instrument, fill.instrument_token)
+        if instrument is not None and instrument.instrument_type:
+            resolved = instrument.instrument_type
+    if resolved is None:
+        resolved = infer_instrument_type(fill.exchange, fill.tradingsymbol)
     return segment_for(fill.exchange, resolved, fill.product)
 
 
@@ -346,7 +370,7 @@ def compute_charges(session: Session, order_ids: set[str]) -> int:
 
         first = fills[0]
         try:
-            segment_key = segment_for_fill(first)
+            segment_key = segment_for_fill(first, session=session)
             rate_set = rate_set_for(session, first.trade_date)
         except (UnknownSegment, NoRateSet):
             logger.warning(

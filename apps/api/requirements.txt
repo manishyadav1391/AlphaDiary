@@ -5,6 +5,9 @@
 # Web
 fastapi==0.162.0
 uvicorn[standard]==0.54.0
+# Required by FastAPI for multipart/form-data, which the tradebook upload
+# endpoint needs (FR-IMP-01). FastAPI has no other multipart parser.
+python-multipart==0.0.20
 
 # Config and validation
 pydantic==2.14.2

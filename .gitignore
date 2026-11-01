@@ -51,6 +51,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Real broker exports kept for local testing. Fixtures in git are
+# anonymised; a real tradebook is personal financial data (SRS 12.4).
+*_real.csv
+apps/api/tests/fixtures/*_real.*
+
 # Database & Docker local mounts
 pgdata/
 *.sqlite3

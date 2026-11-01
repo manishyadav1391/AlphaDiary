@@ -4,7 +4,7 @@
 COMPOSE := docker compose -f docker-compose.dev.yml
 API := $(COMPOSE) exec -T api
 
-.PHONY: dev down logs shell migrate migrate-check revision test lint fmt seed create-user kite-credentials
+.PHONY: dev down logs shell migrate migrate-check revision test lint fmt seed instruments create-user kite-credentials
 
 ## Build and start Postgres and the API.
 dev:
@@ -49,6 +49,10 @@ fmt:
 ## Load seed/charge_rates.json into the database (FR-CHG-07).
 seed:
 	$(API) python -m app.cli seed
+
+## Download and store the Kite instruments master (FR-IMP-05).
+instruments:
+	$(API) python -m app.cli instruments
 
 ## Create the single owner account (FR-AUTH-01). Prompts for email and password.
 create-user:

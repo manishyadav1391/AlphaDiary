@@ -20,7 +20,7 @@ from app.config import get_settings
 from app.deps import API_PREFIX, require_session
 from app.errors import ApiError, error_body
 from app.logging_config import configure_logging
-from app.routers import auth, health, kite, sync
+from app.routers import auth, health, importer, kite, sync
 
 logger = logging.getLogger("tj.api")
 
@@ -38,7 +38,13 @@ def create_app() -> FastAPI:
         dependencies=[Depends(require_session)],
     )
 
-    for router in (health.router, auth.router, kite.router, sync.router):
+    for router in (
+        health.router,
+        auth.router,
+        kite.router,
+        sync.router,
+        importer.router,
+    ):
         app.include_router(router, prefix=API_PREFIX)
 
     @app.exception_handler(ApiError)

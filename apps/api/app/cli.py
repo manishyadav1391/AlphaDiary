@@ -135,10 +135,35 @@ def seed() -> int:
     return 0
 
 
+def load_instruments() -> int:
+    """Download the Kite instruments dump and upsert it (FR-IMP-05, V4).
+
+    The dump is served without authentication, so this works before the
+    broker is connected, which a history import needs.
+    """
+    from app.services import instruments
+
+    print(f"Downloading {instruments.PUBLIC_DUMP_URL} ...")
+    text = instruments.fetch_dump()
+
+    session = SessionLocal()
+    try:
+        written = instruments.load_dump(session, text)
+        session.commit()
+        total = instruments.count(session)
+    finally:
+        session.close()
+
+    print(f"Upserted {written} instruments; {total} now stored.")
+    print("Note: the dump carries lot_size but not multiplier, so VERIFY V6 stays open.")
+    return 0
+
+
 COMMANDS = {
     "create-user": create_user,
     "set-kite-credentials": set_kite_credentials,
     "seed": seed,
+    "instruments": load_instruments,
 }
 
 

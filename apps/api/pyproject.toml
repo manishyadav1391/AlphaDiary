@@ -11,7 +11,14 @@ select = ["E", "F", "I", "B", "UP", "C4", "SIM"]
 
 [tool.ruff.lint.flake8-bugbear]
 # Depends() in an argument default is the documented FastAPI idiom.
-extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path", "fastapi.Body"]
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Body",
+    "fastapi.File",
+    "fastapi.Form",
+]
 
 [tool.ruff.lint.per-file-ignores]
 # Alembic imports the models package purely for its side effect on metadata.
