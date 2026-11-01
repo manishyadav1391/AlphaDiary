@@ -19,7 +19,7 @@ from sqlalchemy import select
 
 from app.config import get_settings
 from app.db import SessionLocal
-from app.models import AppUser, ChargeRateSet
+from app.models import AppUser, ChargeRateSet, Strategy, Tag
 from app.security import EncryptionKeyError, encrypt
 from app.services import auth_service, token_store
 
@@ -97,6 +97,37 @@ def set_kite_credentials() -> int:
     return 0
 
 
+def _seed_journal_lists(path: Path) -> None:
+    """Default strategies and mistake tags (FR-JRN-03, FR-JRN-04).
+
+    Insert-only: a name that already exists is left alone, so renaming one in
+    Settings is not undone by the next `make seed`.
+    """
+    if not path.exists():
+        print(f"Skipped journal seeds: {path} not found")
+        return
+
+    config = json.loads(path.read_text(encoding="utf-8"))
+    session = SessionLocal()
+    try:
+        existing_strategies = set(session.execute(select(Strategy.name)).scalars())
+        added = 0
+        for name in config.get("strategies", []):
+            if name not in existing_strategies:
+                session.add(Strategy(name=name))
+                added += 1
+
+        existing_tags = set(session.execute(select(Tag.kind, Tag.name)).all())
+        for name in config.get("mistake_tags", []):
+            if ("mistake", name) not in existing_tags:
+                session.add(Tag(kind="mistake", name=name))
+                added += 1
+        session.commit()
+    finally:
+        session.close()
+    print(f"Seeded {added} strategies and tags.")
+
+
 def seed() -> int:
     """Load seed/charge_rates.json into charge_rate_set (FR-CHG-07).
 
@@ -128,6 +159,8 @@ def seed() -> int:
         session.commit()
     finally:
         session.close()
+
+    _seed_journal_lists(Path(settings.seed_dir) / "journal_seeds.json")
 
     print(f"Loaded charge rates effective {effective_from}: {label}")
     for note in config.get("_source", {}).get("known_gaps", []):

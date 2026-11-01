@@ -251,3 +251,90 @@ def connected_account(session: Session, account: BrokerAccount) -> BrokerAccount
 @pytest.fixture
 def account_id(account: BrokerAccount) -> uuid.UUID:
     return account.id
+
+
+# ------------------------------------------------- trade data for the API
+
+
+FIXTURE_INSTRUMENTS = {
+    "ALPHAIND": 139520004,
+    "BETACORP": 139520260,
+    "GAMMATEC": 139170564,
+    "DELTAPWR": 136245764,
+    "EPSILONFN": 139321604,
+    "ZETAMOT": 136294404,
+    "ETASTEEL": 139256836,
+    "THETALAB": 136362756,
+    "IOTAAGRO": 139464196,
+}
+
+
+@pytest.fixture
+def instrument_master(session: Session) -> None:
+    """Just the instruments the tradebook fixture needs, so the suite does
+    not have to pull 110,000 rows."""
+    from decimal import Decimal
+
+    from app.models import Instrument
+
+    for symbol, token in FIXTURE_INSTRUMENTS.items():
+        session.add(
+            Instrument(
+                instrument_token=token,
+                exchange="NSE",
+                tradingsymbol=symbol,
+                name=symbol,
+                segment="NSE",
+                instrument_type="EQ",
+                asset_class="equity",
+                lot_size=1,
+                tick_size=Decimal("0.05"),
+            )
+        )
+    session.flush()
+
+
+@pytest.fixture
+def rate_set(session: Session):
+    from app.models import ChargeRateSet
+
+    config = json.loads(
+        (Path(__file__).resolve().parents[2] / "seed" / "charge_rates.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    row = ChargeRateSet(
+        effective_from=dt.date.fromisoformat(config["effective_from"]),
+        label=str(config["label"]),
+        config=config,
+    )
+    session.add(row)
+    session.flush()
+    return row
+
+
+@pytest.fixture
+def journal_lists(session: Session):
+    """The FR-JRN-03/04 seed lists, so tag and strategy filters have data."""
+    from app.models import Strategy, Tag
+
+    strategy = Strategy(name="ORB", description="Opening range breakout")
+    mistake = Tag(kind="mistake", name="Exited early")
+    other = Tag(kind="mistake", name="FOMO entry")
+    session.add_all([strategy, mistake, other])
+    session.flush()
+    return {"strategy": strategy, "mistake": mistake, "other": other}
+
+
+@pytest.fixture
+def imported_trades(
+    session: Session,
+    connected_account: BrokerAccount,
+    instrument_master: None,
+    rate_set,
+):
+    """The anonymised Console tradebook, imported and fully matched."""
+    from app.services import importer
+
+    text = (FIXTURES / "console_tradebook_sample.csv").read_text(encoding="utf-8")
+    return importer.import_tradebook(session, connected_account.id, text, filename="tb.csv")

@@ -20,7 +20,16 @@ from app.config import get_settings
 from app.deps import API_PREFIX, require_session
 from app.errors import ApiError, error_body
 from app.logging_config import configure_logging
-from app.routers import auth, health, importer, kite, sync
+from app.routers import (
+    auth,
+    dashboard,
+    health,
+    importer,
+    kite,
+    playbook,
+    sync,
+    trades,
+)
 
 logger = logging.getLogger("tj.api")
 
@@ -44,6 +53,9 @@ def create_app() -> FastAPI:
         kite.router,
         sync.router,
         importer.router,
+        trades.router,
+        dashboard.router,
+        playbook.router,
     ):
         app.include_router(router, prefix=API_PREFIX)
 

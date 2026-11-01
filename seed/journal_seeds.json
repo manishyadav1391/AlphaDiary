@@ -1,0 +1,27 @@
+{
+  "_source": "SRS FR-JRN-03 and FR-JRN-04 seed lists. Editable in Settings once that exists.",
+  "strategies": [
+    "ORB",
+    "Pullback",
+    "Mean Reversion",
+    "VWAP Bounce",
+    "Breakout",
+    "Breakdown",
+    "EMA Crossover",
+    "RSI Reversal",
+    "News",
+    "Other"
+  ],
+  "mistake_tags": [
+    "FOMO entry",
+    "Moved stop-loss",
+    "Revenge trade",
+    "Exited early",
+    "Held too long",
+    "Oversized",
+    "Broke daily limit",
+    "No setup",
+    "Chased price",
+    "Averaged down"
+  ]
+}
