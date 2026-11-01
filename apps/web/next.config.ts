@@ -11,6 +11,9 @@ import type { NextConfig } from "next";
 const API_ORIGIN = process.env.API_ORIGIN ?? "http://localhost:8000";
 
 const nextConfig: NextConfig = {
+  // A self-contained server bundle, so the production image carries no
+  // node_modules and runs as a non-root user.
+  output: "standalone",
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

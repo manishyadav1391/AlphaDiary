@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -84,7 +85,10 @@ class NotificationLog(Base):
 
 
 class AppSetting(Base):
+    """A JSONB bag. `value` holds whatever the key needs: a list of reminder
+    slots, a date string, a preferences object."""
+
     __tablename__ = "app_setting"
 
     key: Mapped[str] = mapped_column(Text, primary_key=True)
-    value: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    value: Mapped[Any] = mapped_column(JSONB, nullable=False)

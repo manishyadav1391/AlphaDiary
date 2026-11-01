@@ -4,7 +4,7 @@
 COMPOSE := docker compose -f docker-compose.dev.yml
 API := $(COMPOSE) exec -T api
 
-.PHONY: dev down logs shell migrate migrate-check revision test lint fmt seed instruments create-user kite-credentials
+.PHONY: dev down logs shell migrate migrate-check revision test lint fmt seed instruments holidays worker-logs create-user kite-credentials
 
 ## Build and start Postgres and the API.
 dev:
@@ -53,6 +53,14 @@ seed:
 ## Download and store the Kite instruments master (FR-IMP-05).
 instruments:
 	$(API) python -m app.cli instruments
+
+## Refresh the NSE trading-holiday calendar (FR-REM-01).
+holidays:
+	$(API) python -m app.cli holidays
+
+## Follow the worker's log.
+worker-logs:
+	$(COMPOSE) logs -f worker
 
 ## Create the single owner account (FR-AUTH-01). Prompts for email and password.
 create-user:

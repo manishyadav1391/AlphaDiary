@@ -1,0 +1,78 @@
+# Production stack (SRS 11.1).
+#
+#   docker compose pull && docker compose up -d
+#
+# Images are built by CI and pulled by tag; nothing is built on the server.
+# Every secret comes from .env, which is never committed.
+
+services:
+  db:
+    image: postgres:16
+    env_file: .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  api:
+    image: ghcr.io/${GHCR_OWNER}/tj-api:${TAG:-latest}
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    # Migrations run as the API starts, so a deploy never serves a schema
+    # older than its code (SRS 11.3).
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/api/v1/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  # Exactly ONE replica (SRS 11.1). Scaling this does not scale anything.
+  worker:
+    image: ghcr.io/${GHCR_OWNER}/tj-api:${TAG:-latest}
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    command: python -m app.worker
+    restart: unless-stopped
+
+  web:
+    image: ghcr.io/${GHCR_OWNER}/tj-web:${TAG:-latest}
+    env_file: .env
+    environment:
+      API_ORIGIN: http://api:8000
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    env_file: .env
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - web
+      - api
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

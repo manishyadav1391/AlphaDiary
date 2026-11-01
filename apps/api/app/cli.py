@@ -13,13 +13,15 @@ import datetime as dt
 import getpass
 import json
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.db import SessionLocal
-from app.models import AppUser, ChargeRateSet, Strategy, Tag
+from app.models import AppSetting, AppUser, ChargeRateSet, NotificationChannel, Strategy, Tag
 from app.security import EncryptionKeyError, encrypt
 from app.services import auth_service, token_store
 
@@ -128,6 +130,97 @@ def _seed_journal_lists(path: Path) -> None:
     print(f"Seeded {added} strategies and tags.")
 
 
+def _seed_reminders(session_factory: Callable[[], Session]) -> None:
+    """Default reminder slots and the email channel (FR-REM-02, FR-REM-06)."""
+    import json as _json
+
+    from app.security import encrypt
+    from app.services import reminders
+
+    settings = get_settings()
+    session = session_factory()
+    try:
+        if session.get(AppSetting, reminders.REMINDER_SLOTS_KEY) is None:
+            reminders.save_slots(session, reminders.DEFAULT_SLOTS)
+            print(f"Seeded {len(reminders.DEFAULT_SLOTS)} reminder slots.")
+
+        existing = session.get(NotificationChannel, "email")
+        if existing is None:
+            session.add(
+                NotificationChannel(
+                    channel="email",
+                    enabled=bool(settings.reminder_email_to),
+                    config_enc=encrypt(_json.dumps({"to": settings.reminder_email_to})),
+                )
+            )
+            print(f"Seeded the email channel for {settings.reminder_email_to or 'nobody'}.")
+        session.commit()
+    finally:
+        session.close()
+
+
+def notify_test() -> int:
+    """Send one test message on every enabled channel (FR-REM-06)."""
+    from app.services import notifier
+
+    settings = get_settings()
+    if not settings.email_configured:
+        raise SystemExit("Email is not configured. Set RESEND_API_KEY and REMINDER_EMAIL_TO.")
+
+    print(f"from: {settings.resend_from}")
+    print(f"to  : {settings.reminder_email_to}")
+    channel = notifier.ResendEmail()
+    try:
+        channel.send(notifier.test_message(settings.public_base_url))
+    except notifier.NotConfigured as exc:
+        raise SystemExit(f"Not configured: {exc}") from exc
+    except notifier.SendFailed as exc:
+        raise SystemExit(f"Resend refused it: {exc}") from exc
+
+    print("Sent. Check that inbox.")
+    return 0
+
+
+def load_holidays() -> int:
+    """Refresh the NSE trading-holiday calendar (FR-REM-01, VERIFY V11).
+
+    Fetches the exchange's own list; falls back to the checked-in snapshot
+    when NSE cannot be reached, so a flaky network never leaves the worker
+    treating a holiday as a trading day.
+    """
+    from app.services import holidays as holiday_service
+
+    settings = get_settings()
+    snapshot = Path(settings.seed_dir) / "market_holidays.json"
+
+    try:
+        rows = holiday_service.fetch_rows()
+        print(f"Fetched {len(rows)} holidays from NSE.")
+        try:
+            holiday_service.save_snapshot(snapshot, rows)
+            print(f"Snapshot written to {snapshot}.")
+        except OSError:
+            print("Could not write the snapshot (read-only mount?); continuing.")
+    except holiday_service.HolidayFetchFailed as exc:
+        if not snapshot.exists():
+            raise SystemExit(f"NSE fetch failed ({exc}) and no snapshot at {snapshot}.") from exc
+        print(f"NSE fetch failed ({exc}); using the snapshot.")
+        rows = holiday_service.load_snapshot(snapshot)
+
+    session = SessionLocal()
+    try:
+        stored = holiday_service.store(session, rows)
+        session.commit()
+    finally:
+        session.close()
+
+    special = [row for row in rows if row["is_trading_override"]]
+    print(f"Stored {stored} holidays.")
+    for row in special:
+        print(f"  special session (still a trading day): {row['trade_date']} {row['description']}")
+    return 0
+
+
 def seed() -> int:
     """Load seed/charge_rates.json into charge_rate_set (FR-CHG-07).
 
@@ -161,6 +254,7 @@ def seed() -> int:
         session.close()
 
     _seed_journal_lists(Path(settings.seed_dir) / "journal_seeds.json")
+    _seed_reminders(SessionLocal)
 
     print(f"Loaded charge rates effective {effective_from}: {label}")
     for note in config.get("_source", {}).get("known_gaps", []):
@@ -197,6 +291,8 @@ COMMANDS = {
     "set-kite-credentials": set_kite_credentials,
     "seed": seed,
     "instruments": load_instruments,
+    "holidays": load_holidays,
+    "notify-test": notify_test,
 }
 
 

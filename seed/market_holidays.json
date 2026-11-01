@@ -1,0 +1,108 @@
+{
+  "_source": "https://www.nseindia.com/api/holiday-master?type=trading",
+  "_segment": "CM",
+  "_retrieved": "2026-11-01",
+  "_note": "is_trading_override marks a special session, such as Muhurat trading on Diwali Laxmi Pujan.",
+  "holidays": [
+    {
+      "trade_date": "2026-01-15",
+      "description": "Municipal Corporation Election - Maharashtra",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-01-26",
+      "description": "Republic Day",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-02-15",
+      "description": "Mahashivratri",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-03-03",
+      "description": "Holi",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-03-21",
+      "description": "Id-Ul-Fitr (Ramadan Eid)",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-03-26",
+      "description": "Shri Ram Navami",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-03-31",
+      "description": "Shri Mahavir Jayanti",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-04-03",
+      "description": "Good Friday",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-04-14",
+      "description": "Dr. Baba Saheb Ambedkar Jayanti",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-05-01",
+      "description": "Maharashtra Day",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-05-28",
+      "description": "Bakri Id",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-06-26",
+      "description": "Muharram",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-08-15",
+      "description": "Independence Day",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-09-14",
+      "description": "Ganesh Chaturthi",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-10-02",
+      "description": "Mahatma Gandhi Jayanti",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-10-20",
+      "description": "Dussehra",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-11-08",
+      "description": "Diwali Laxmi Pujan",
+      "is_trading_override": true
+    },
+    {
+      "trade_date": "2026-11-10",
+      "description": "Diwali-Balipratipada",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-11-24",
+      "description": "Prakash Gurpurb Sri Guru Nanak Dev",
+      "is_trading_override": false
+    },
+    {
+      "trade_date": "2026-12-25",
+      "description": "Christmas",
+      "is_trading_override": false
+    }
+  ]
+}

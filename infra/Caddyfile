@@ -1,0 +1,43 @@
+# Caddy terminates TLS and routes the two services (SRS 11.1).
+#
+# Certificates are obtained and renewed automatically from Let's Encrypt;
+# there is nothing to configure beyond a DNS record pointing at this host and
+# ports 80 and 443 reachable. Set DOMAIN and ACME_EMAIL in .env.
+
+{
+	email {$ACME_EMAIL}
+	# Renewals and failures are worth seeing; requests are not.
+	log {
+		output stderr
+		level ERROR
+	}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# The API must be matched before the catch-all, or Next.js answers it.
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+
+	header {
+		# HSTS. Only safe once the domain is permanently on HTTPS.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# This is a private journal; keep it out of search results.
+		X-Robots-Tag "noindex, nofollow"
+		-Server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

@@ -38,8 +38,8 @@ no_implicit_optional = true
 strict_equality = true
 
 [[tool.mypy.overrides]]
-# The kiteconnect SDK ships no type stubs.
-module = ["kiteconnect.*"]
+# Neither the kiteconnect SDK nor boto3 ships type stubs.
+module = ["kiteconnect.*", "boto3.*", "botocore.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

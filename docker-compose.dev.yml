@@ -56,5 +56,38 @@ services:
       retries: 6
       start_period: 15s
 
+  # Exactly one replica. The sync takes an advisory lock and the reminder log
+  # is unique per (slot, channel), so a second worker would be harmless but
+  # would double every Kite call for nothing.
+  worker:
+    build:
+      context: ./apps/api
+      target: dev
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./apps/api/app:/srv/api/app
+      - ./seed:/srv/seed:ro
+    command: python -m app.worker
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./apps/web
+      target: prod
+    environment:
+      # Server-side rewrites reach the API over the compose network.
+      API_ORIGIN: http://api:8000
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+    profiles:
+      # Not started by `make dev`: `npm run dev` on the host gives hot reload.
+      # Here so `docker compose build` covers the web target too.
+      - full
+
 volumes:
   pgdata:

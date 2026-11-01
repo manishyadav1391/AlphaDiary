@@ -23,10 +23,15 @@ psycopg[binary]==3.3.6
 cryptography==50.0.2
 argon2-cffi==25.1.0
 
-# Broker and HTTP
+# Broker and HTTP. httpx also carries the Resend email calls, so the
+# notifier needs no SDK of its own.
 kiteconnect==5.2.2
 httpx==0.28.1
 
-# Dates and time zones (Asia/Kolkata must resolve inside the container)
-python-dateutil==4.0.0
+# Object storage: presigned URLs for screenshots (FR-JRN-07).
+boto3==1.42.6
+
+# Time zones. Asia/Kolkata must resolve inside the container.
+# python-dateutil is deliberately not pinned here: nothing imports it
+# directly, and kiteconnect and botocore disagree about its range.
 tzdata==2026.6

@@ -150,7 +150,7 @@ One user: the owner. No roles. The app must still require a login because it hol
 | V8 | Console tradebook CSV column names, date limits and format | CSV importer | **Confirmed 1 Nov 2026** from a real export. Thirteen lowercase columns: `symbol, isin, trade_date, exchange, segment, series, trade_type, auction, quantity, price, trade_id, order_id, order_execution_time`. `trade_date` is ISO; `order_execution_time` is ISO IST with no offset; `quantity` is float-formatted (`20.000000`); `price` carries six decimals of float noise and is quantized to four on import. **There is no `product` column**, so MIS/CNC is inferred (FR-IMP). Date limits per export still unmeasured. |
 | V9 | Current charge rates per segment (brokerage, STT, exchange fees, SEBI, stamp duty, GST) | Charges engine seed data | **Transcribed, not verified.** `seed/charge_rates.json` holds the rates published at https://zerodha.com/charges/ as read on 1 Nov 2026, with its gaps listed in the file. Still needs checking against a real contract note per FR-CHG acceptance. |
 | V10 | WhatsApp Cloud API setup (template approval, test recipients) and Telegram bot setup | Reminder channels | Not verified. |
-| V11 | Source and format of the NSE holiday calendar | Skip reminders on holidays | Not verified. |
+| V11 | Source and format of the NSE holiday calendar | Skip reminders on holidays | **Confirmed 1 Nov 2026.** `https://www.nseindia.com/api/holiday-master?type=trading`, served to a browser-like request that has first fetched the holidays page. The `CM` key is the Capital Market segment (20 rows for 2026). Dates are `DD-Mon-YYYY`. A description ending in `*` marks a special session (Muhurat trading, 8 Nov 2026) and is stored with `is_trading_override` set, so the day still counts as a trading day. Loaded by `make holidays`, with `seed/market_holidays.json` as an offline fallback. |
 
 ## 4. Architecture and technology
 
@@ -165,7 +165,7 @@ Pin exact versions in lock files at build time. Use the latest stable releases.
 | Worker | Same Python image, command `python -m app.worker`, APScheduler (or a simple minute loop) |
 | Database | PostgreSQL 16 |
 | Storage | S3-compatible API through `boto3` with a configurable endpoint |
-| Email | SMTP through `aiosmtplib` (works with Gmail app password, Amazon SES SMTP, Brevo and others) |
+| Email | **Resend HTTPS API over `httpx`** (owner's decision, 1 Nov 2026). No SMTP credentials to store and no extra dependency, since `httpx` is already used for Kite. Without a verified domain Resend sends from `onboarding@resend.dev` and delivers only to the address on the Resend account. `services/notifier.py` keeps a `Channel` protocol so SMTP can be added back without touching the reminder engine. |
 | Optional chat | WhatsApp Cloud API (utility template) and Telegram Bot API, both over `httpx` |
 | Proxy | Caddy (automatic HTTPS) |
 | Packaging and CI | Docker, Docker Compose, GitHub Actions building images to GHCR |
@@ -1109,11 +1109,8 @@ S3_REGION=auto
 S3_BUCKET=tj-data
 S3_ACCESS_KEY=change-me
 S3_SECRET_KEY=change-me
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_USER=change-me
-SMTP_PASSWORD=change-me
-SMTP_FROM=journal@example.com
+RESEND_API_KEY=change-me
+RESEND_FROM=onboarding@resend.dev
 REMINDER_EMAIL_TO=me@example.com
 HEARTBEAT_URL=https://hc-ping.com/<uuid>
 BACKUP_AGE_PUBLIC_KEY=age1...
