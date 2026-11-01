@@ -1,0 +1,23 @@
+# Keep LF in the repository and in the working tree for everything the Linux
+# containers and CI read. A CRLF Makefile breaks GNU Make recipes, and a CRLF
+# requirements.txt or Dockerfile breaks the image build.
+* text=auto eol=lf
+
+Makefile        text eol=lf
+*.sh            text eol=lf
+*.py            text eol=lf
+*.mako          text eol=lf
+*.toml          text eol=lf
+*.ini           text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+Dockerfile      text eol=lf
+.env.example    text eol=lf
+
+# Windows-only helper.
+*.ps1           text eol=crlf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.svg text eol=lf

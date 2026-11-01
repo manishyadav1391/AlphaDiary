@@ -1,0 +1,38 @@
+# Tool configuration only. The API is run from this directory, not installed
+# as a package, so there is no [project] table and no build backend.
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = [".venv", "alembic/versions/*.mako"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "C4", "SIM"]
+
+[tool.ruff.lint.flake8-bugbear]
+# Depends() in an argument default is the documented FastAPI idiom.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path", "fastapi.Body"]
+
+[tool.ruff.lint.per-file-ignores]
+# Alembic imports the models package purely for its side effect on metadata.
+"alembic/env.py" = ["E402"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["app"]
+plugins = []
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+# The kiteconnect SDK ships no type stubs.
+module = ["kiteconnect.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

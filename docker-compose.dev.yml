@@ -1,8 +1,57 @@
+# Local development stack: Postgres and the FastAPI API.
+# The Next.js app runs on the host with `npm run dev` in apps/web.
+#
+#   docker compose -f docker-compose.dev.yml up -d
+#   make migrate
+
 services:
   db:
     image: postgres:16
-    environment: { POSTGRES_USER: tj, POSTGRES_PASSWORD: tj, POSTGRES_DB: tj }
-    ports: [ "5432:5432" ]
-    volumes: [ pgdata:/var/lib/postgresql/data ]
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      # Postgres stores timestamptz in UTC regardless; business logic converts
+      # to Asia/Kolkata in the application (SRS 4.3).
+      TZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  api:
+    build:
+      context: ./apps/api
+      target: dev
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      # Live reload against the working tree. The image's site-packages are
+      # not shadowed because only the source directories are mounted.
+      - ./apps/api/app:/srv/api/app
+      - ./apps/api/alembic:/srv/api/alembic
+      - ./apps/api/tests:/srv/api/tests
+      - ./apps/api/pyproject.toml:/srv/api/pyproject.toml
+      - ./apps/api/alembic.ini:/srv/api/alembic.ini
+    command: >
+      uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
 volumes:
   pgdata:
