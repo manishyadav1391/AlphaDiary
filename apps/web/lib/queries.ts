@@ -17,10 +17,20 @@ import {
 
 import { api } from "@/lib/api";
 import type {
+  Analytics,
+  AnalyticsQuery,
   DashboardSummary,
   EquityCurve,
   Heatmap,
+  ChannelTestResult,
+  ImportProduct,
+  ImportReport,
+  KiteSettings,
   KiteStatus,
+  NotificationChannel,
+  NotificationLogEntry,
+  ReminderSettings,
+  ReminderSlot,
   Playbook,
   SyncLog,
   SyncStatus,
@@ -41,6 +51,12 @@ export const keys = {
   equityCurve: (from?: string, to?: string, by?: string) =>
     ["dashboard", "equity-curve", from, to, by] as const,
   playbook: (date: string) => ["playbook", date] as const,
+  syncLogs: ["sync", "logs"] as const,
+  kiteSettings: ["settings", "kite"] as const,
+  reminderSettings: ["settings", "reminders"] as const,
+  channel: (name: string) => ["settings", "channel", name] as const,
+  notificationLog: ["settings", "notifications"] as const,
+  analytics: (params: AnalyticsQuery) => ["analytics", params] as const,
 };
 
 export interface TradeQuery {
@@ -85,6 +101,10 @@ export function useSyncStatus(): UseQueryResult<SyncStatus> {
   return useQuery({
     queryKey: keys.syncStatus,
     queryFn: () => api.get<SyncStatus>("/sync/status"),
+    // Follow a running sync to its end, then stop. The catch-up sync the Kite
+    // callback queues starts a beat after the redirect, so without this the
+    // dashboard would sit on "not synced yet" until the next navigation.
+    refetchInterval: (query) => (query.state.data?.running ? 3_000 : false),
     retry: false,
   });
 }
@@ -190,5 +210,154 @@ export function useSavePlaybook(date: string) {
     mutationFn: (body: { plan?: unknown; review?: unknown }) =>
       api.put<Playbook>(`/playbook/${date}`, body),
     onSuccess: (playbook) => client.setQueryData(keys.playbook(date), playbook),
+  });
+}
+
+/* ---------------------------------------------------------------- import */
+
+/**
+ * Parse and classify a Console tradebook without saving (FR-IMP-01).
+ *
+ * The response leaves `rows_new`, `rows_dup` and `unresolved_symbols` at
+ * zero/empty, because `preview()` never touches the database. Do not show
+ * them on the preview step.
+ */
+export function usePreviewTradebook() {
+  return useMutation({
+    mutationFn: (file: File) => {
+      const form = new FormData();
+      // The field name is fixed by the router (routers/importer.py).
+      form.append("file", file);
+      return api.upload<ImportReport>("/import/tradebook/preview", form);
+    },
+  });
+}
+
+export function useImportTradebook() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ file, product }: { file: File; product?: ImportProduct }) => {
+      const form = new FormData();
+      form.append("file", file);
+      // Omitted entirely when unset: an empty string is not a valid product
+      // and the API would answer 422.
+      if (product) form.append("product", product);
+      return api.upload<ImportReport>("/import/tradebook", form);
+    },
+    onSuccess: () => {
+      // An import re-runs matching, so it moves the same things a sync does,
+      // minus the broker token it never touches.
+      void client.invalidateQueries({ queryKey: ["trades"] });
+      void client.invalidateQueries({ queryKey: ["trade"] });
+      void client.invalidateQueries({ queryKey: ["dashboard"] });
+      void client.invalidateQueries({ queryKey: ["playbook"] });
+      void client.invalidateQueries({ queryKey: keys.syncStatus });
+    },
+  });
+}
+
+/* --------------------------------------------------------------- settings */
+
+export function useKiteSettings(): UseQueryResult<KiteSettings> {
+  return useQuery({
+    queryKey: keys.kiteSettings,
+    queryFn: () => api.get<KiteSettings>("/settings/kite"),
+    retry: false,
+  });
+}
+
+export function useSaveKiteCredentials() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { api_key: string; api_secret: string }) =>
+      api.put<KiteSettings>("/settings/kite", body),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.kiteSettings });
+      // A new key can change the connection's verdict.
+      void client.invalidateQueries({ queryKey: keys.kiteStatus });
+    },
+  });
+}
+
+export function useReminderSettings(): UseQueryResult<ReminderSettings> {
+  return useQuery({
+    queryKey: keys.reminderSettings,
+    queryFn: () => api.get<ReminderSettings>("/settings/reminders"),
+    retry: false,
+  });
+}
+
+export function useSaveReminderSlots() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (slots: ReminderSlot[]) =>
+      api.put<ReminderSettings>("/settings/reminders", { slots }),
+    onSuccess: () => void client.invalidateQueries({ queryKey: keys.reminderSettings }),
+  });
+}
+
+export function useSkipRemindersToday() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<void>("/settings/reminders/skip-today"),
+    onSuccess: () => void client.invalidateQueries({ queryKey: keys.reminderSettings }),
+  });
+}
+
+export function useChannel(name: string): UseQueryResult<NotificationChannel> {
+  return useQuery({
+    queryKey: keys.channel(name),
+    queryFn: () => api.get<NotificationChannel>(`/settings/channels/${name}`),
+    retry: false,
+  });
+}
+
+export function useSaveChannel(name: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { enabled: boolean; destination: string | null }) =>
+      api.put<NotificationChannel>(`/settings/channels/${name}`, body),
+    onSuccess: () => void client.invalidateQueries({ queryKey: keys.channel(name) }),
+  });
+}
+
+export function useTestChannel(name: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<ChannelTestResult>(`/settings/channels/${name}/test`),
+    // A test writes nothing to the log, but a failure is worth re-reading.
+    onSuccess: () => void client.invalidateQueries({ queryKey: keys.notificationLog }),
+  });
+}
+
+export function useNotificationLog(): UseQueryResult<NotificationLogEntry[]> {
+  return useQuery({
+    queryKey: keys.notificationLog,
+    queryFn: () => api.get<NotificationLogEntry[]>("/settings/notifications/log", { limit: 50 }),
+    retry: false,
+  });
+}
+
+export function useSyncLogs(): UseQueryResult<SyncLog[]> {
+  return useQuery({
+    queryKey: keys.syncLogs,
+    queryFn: () => api.get<SyncLog[]>("/sync/logs", { limit: 20 }),
+    retry: false,
+  });
+}
+
+/* -------------------------------------------------------------- analytics */
+
+/**
+ * Every breakdown on the Analytics screen, in one request (FR-AN).
+ *
+ * One call rather than seven: the server loads the trades once and buckets
+ * them in memory, so splitting this up would re-query the same rows per
+ * section over the same filters.
+ */
+export function useAnalytics(params: AnalyticsQuery): UseQueryResult<Analytics> {
+  return useQuery({
+    queryKey: keys.analytics(params),
+    queryFn: () => api.get<Analytics>("/analytics", { ...params }),
   });
 }

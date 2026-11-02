@@ -27,6 +27,13 @@ services:
         condition: service_healthy
     # Migrations run as the API starts, so a deploy never serves a schema
     # older than its code (SRS 11.3).
+    # The API image is built from ./apps/api, so the repo-root `seed/` files
+    # are outside the build context and cannot be in the image. They are
+    # mounted instead, which also means charge rates can be corrected without
+    # a rebuild (SRS 12, FR-CHG). `seed`, `holidays` and `instruments` all
+    # read from here.
+    volumes:
+      - ./seed:/srv/seed:ro
     command: >
       sh -c "alembic upgrade head &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000"
@@ -45,6 +52,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # No seed mount: the worker reads the holiday calendar from the database,
+    # not from seed/. Only the CLI (`seed`, `holidays`) touches those files,
+    # and it is documented to run in the api container.
     command: python -m app.worker
     restart: unless-stopped
 
@@ -67,7 +77,9 @@ services:
       - web
       - api
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Path as it sits in the repo, so the stack runs straight from a
+      # git checkout. bootstrap.sh lays the same layout out under /opt/tj.
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     restart: unless-stopped

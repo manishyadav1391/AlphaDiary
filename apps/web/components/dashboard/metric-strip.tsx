@@ -33,8 +33,8 @@ export function MetricStrip({
       <dl className="flex min-w-max divide-x divide-rule">
         {metrics.map((metric) => (
           <div key={metric.label} className="flex flex-col gap-1 px-4 first:pl-0 last:pr-0">
-            <dt className="text-caption text-slate">{metric.label}</dt>
-            <dd className="text-row tabular text-graphite">{metric.value}</dd>
+            <dt className="text-caption text-text-2">{metric.label}</dt>
+            <dd className="text-mono-sm text-text-0">{metric.value}</dd>
           </div>
         ))}
       </dl>

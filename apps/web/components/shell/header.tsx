@@ -1,99 +1,125 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { RefreshCw, Settings } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
+import { ConnectionChip } from "@/components/shell/connection-chip";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { formatDate } from "@/lib/format";
-import { useKiteStatus, useRunSync, useSyncStatus } from "@/lib/queries";
+import { useKiteStatus, useRunSync } from "@/lib/queries";
+import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 /*
-  DESIGN.md 8: 56 px, not sticky. Left is the page title, or today's date on
-  Home. Right is the connection chip, the sync button and the settings gear.
-  No navigation links live here — those are the bottom tabs or the sidebar.
+  Design spec §8.2:
+  Sticky glass topbar with scroll-driven border and opacity,
+  page title (h1), status chip, sync button with spin animation,
+  and settings gear with hover rotation.
 */
 
 const TITLES: Record<string, string> = {
   "/trades": "Trades",
   "/playbook": "Playbook",
   "/analytics": "Analytics",
+  "/import": "Import",
+  "/settings": "Settings",
 };
-
-function ConnectionChip() {
-  const { data, isLoading } = useKiteStatus();
-  const sync = useSyncStatus();
-
-  if (isLoading) {
-    return <span className="text-secondary text-slate">Checking…</span>;
-  }
-
-  if (sync.data?.running) {
-    return (
-      <span className="flex items-center gap-2 text-secondary text-slate">
-        <RefreshCw size={14} className="motion-safe:animate-spin" aria-hidden />
-        Syncing
-      </span>
-    );
-  }
-
-  const connected = data?.status === "connected";
-  return (
-    <span
-      // Login needed gets the soft marker background: it is one of the
-      // "needs attention" cases the highlighter exists for.
-      className={cn(
-        "flex items-center gap-2 rounded-[6px] px-2 py-1 text-secondary",
-        connected ? "text-slate" : "bg-marker-soft text-graphite",
-      )}
-    >
-      <span
-        aria-hidden
-        className={cn(
-          "size-2 rounded-full",
-          connected ? "bg-profit" : "bg-loss",
-        )}
-      />
-      {connected ? "Connected" : "Login needed"}
-    </span>
-  );
-}
 
 export function Header() {
   const pathname = usePathname();
   const runSync = useRunSync();
+  const kite = useKiteStatus();
+  const toast = useToast();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 8);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const title = TITLES[pathname];
+  const connected = kite.data?.status === "connected";
+  const syncLabel = connected ? "Sync now" : "Connect Zerodha first";
+
+  const handleSync = async () => {
+    try {
+      const res = await runSync.mutateAsync();
+      const count = (res?.fills_new ?? 0);
+      toast(`Synced ${count} ${count === 1 ? "trade" : "trades"}`);
+    } catch {
+      toast("Sync failed. Check broker status.", { variant: "error" });
+    }
+  };
 
   return (
-    <header className="flex h-14 items-center justify-between gap-3 border-b border-rule
-      bg-sheet px-4 md:px-6">
-      <h1 className="text-title text-graphite">
-        {title ?? formatDate(new Date())}
-      </h1>
+    <header
+      className={cn(
+        "sticky top-0 z-20 flex h-16 items-center justify-between gap-4 px-4 transition-all duration-200 md:px-8",
+        scrolled
+          ? "border-b border-glass-border bg-bg-1/80 backdrop-blur-xl shadow-lg"
+          : "border-b border-transparent bg-bg-0/40 backdrop-blur-md",
+      )}
+    >
+      <div className="flex flex-col">
+        <h1 className="text-h2 font-bold tracking-tight text-text-0 md:text-h1">
+          {title ?? formatDate(new Date())}
+        </h1>
+        {!title && (
+          <span className="text-[11px] font-medium text-text-2 tracking-wide uppercase">
+            Intraday Journal
+          </span>
+        )}
+      </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         <ConnectionChip />
 
+        {/* Sync Button */}
         <Button
           variant="quiet"
-          size="icon"
-          onClick={() => runSync.mutate()}
-          disabled={runSync.isPending}
-          // The verb matches the toast it produces (DESIGN.md 13).
-          aria-label="Sync now"
-          title="Sync now"
+          size="icon-sm"
+          onClick={handleSync}
+          disabled={runSync.isPending || !connected}
+          aria-label={syncLabel}
+          title={syncLabel}
+          className="hover:text-violet-300"
         >
           <RefreshCw
-            size={20}
+            size={18}
             strokeWidth={1.75}
-            className={cn(runSync.isPending && "motion-safe:animate-spin")}
+            className={cn(
+              "transition-transform",
+              runSync.isPending && "animate-spin text-violet-400",
+            )}
             aria-hidden
           />
         </Button>
 
-        <Button variant="quiet" size="icon" aria-label="Settings" title="Settings" disabled>
-          <Settings size={20} strokeWidth={1.75} aria-hidden />
-        </Button>
+        <ThemeToggle />
+
+        {/* Settings Button */}
+        <Link
+          href="/settings"
+          aria-label="Settings"
+          title="Settings"
+          className={cn(
+            buttonVariants({ variant: "quiet", size: "icon-sm" }),
+            "group hover:text-text-0",
+          )}
+        >
+          <Settings
+            size={18}
+            strokeWidth={1.75}
+            className="transition-transform duration-300 group-hover:rotate-45"
+            aria-hidden
+          />
+        </Link>
       </div>
     </header>
   );

@@ -96,14 +96,32 @@ if [[ "$SERVICE_USER" != "root" ]]; then
 fi
 echo "    $APP_DIR ready"
 
-for file in docker-compose.yml infra/Caddyfile .env.example; do
-	source_path="$(dirname "$0")/../${file#infra/}"
-	[[ "$file" == infra/* ]] && source_path="$(dirname "$0")/$(basename "$file")"
+# The repo layout is preserved, because docker-compose.yml refers to
+# ./infra/Caddyfile and ./seed relative to itself.
+mkdir -p "$APP_DIR/infra"
+for file in docker-compose.yml .env.example infra/Caddyfile infra/docker-compose.build.yml; do
+	source_path="$(dirname "$0")/../$file"
 	if [[ -f "$source_path" ]]; then
-		target="$APP_DIR/$(basename "$file")"
+		target="$APP_DIR/$file"
 		[[ -f "$target" ]] || cp "$source_path" "$target"
 	fi
 done
+
+# The seed files are bind-mounted by docker-compose.yml rather than baked into
+# the image: the API image is built from apps/api, so the repo-root seed/ is
+# outside its build context. Without this directory `app.cli seed` fails with
+# "Not found: /srv/seed/charge_rates.json".
+seed_source="$(dirname "$0")/../seed"
+if [[ -d "$seed_source" ]]; then
+	mkdir -p "$APP_DIR/seed"
+	cp -n "$seed_source"/*.json "$APP_DIR/seed/" 2>/dev/null || true
+	if [[ "$SERVICE_USER" != "root" ]]; then
+		chown -R "$SERVICE_USER":"$SERVICE_USER" "$APP_DIR/seed"
+	fi
+	echo "    seed/ copied ($(ls -1 "$APP_DIR/seed" | wc -l) files)"
+else
+	echo "    NOTE: seed/ not found beside this script; copy it to $APP_DIR/seed"
+fi
 
 # .env is never generated here: no script should invent a secret.
 if [[ ! -f "$APP_DIR/.env" ]]; then

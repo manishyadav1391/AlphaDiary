@@ -64,16 +64,32 @@ async function toError(response: Response): Promise<ApiError> {
   return new ApiError(response.status, code, message);
 }
 
+function isFormData(body: unknown): body is FormData {
+  return typeof FormData !== "undefined" && body instanceof FormData;
+}
+
 async function request<T>(
   method: string,
   path: string,
   options: { query?: Query; body?: unknown } = {},
 ): Promise<T> {
+  const form = isFormData(options.body);
   const response = await fetch(buildUrl(path, options.query), {
     method,
     credentials: "same-origin",
-    headers: options.body === undefined ? undefined : { "Content-Type": "application/json" },
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    // A multipart body must NOT carry a Content-Type header: only the browser
+    // knows the boundary it generated, and naming the type without it leaves
+    // the server unable to parse the parts.
+    headers:
+      options.body === undefined || form
+        ? undefined
+        : { "Content-Type": "application/json" },
+    body:
+      options.body === undefined
+        ? undefined
+        : form
+          ? (options.body as FormData)
+          : JSON.stringify(options.body),
   });
 
   if (!response.ok) throw await toError(response);
@@ -86,4 +102,12 @@ export const api = {
   post: <T>(path: string, body?: unknown) => request<T>("POST", path, { body }),
   put: <T>(path: string, body?: unknown) => request<T>("PUT", path, { body }),
   patch: <T>(path: string, body?: unknown) => request<T>("PATCH", path, { body }),
+  /**
+   * Multipart POST, for the Console tradebook import (FR-IMP-01). The browser
+   * sets Content-Type with its own boundary; see `request`. Errors come back
+   * through the same `toError` envelope as every other call, so a 413
+   * `file_too_large` or a 422 `invalid_tradebook` arrives as an ApiError with
+   * a usable `code`.
+   */
+  upload: <T>(path: string, form: FormData) => request<T>("POST", path, { body: form }),
 };

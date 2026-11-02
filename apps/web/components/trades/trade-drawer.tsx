@@ -8,32 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Field, NumberInput, TextArea } from "@/components/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EMPTY, formatDate, formatDuration, formatPrice, formatR, formatTime } from "@/lib/format";
+import { formatDate, formatDuration, formatPrice, formatR, formatTime } from "@/lib/format";
 import { useSaveTrade, useTrade } from "@/lib/queries";
 import type { TradeDetail } from "@/lib/types";
-
-/*
-  SCREENS.md 6, as a bottom sheet on phones and a right-hand panel from
-  768 px (DESIGN.md 9). Journal first on narrow screens, because tagging the
-  trade is the job; the charge breakdown sits under it.
-*/
+import { cn } from "@/lib/utils";
 
 const RATINGS = [1, 2, 3, 4, 5] as const;
 
 function ChargeRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-rule py-2 last:border-0">
-      <span className="text-secondary text-slate">{label}</span>
-      <Amount value={value} className="text-secondary text-graphite" />
+    <div className="flex items-baseline justify-between gap-4 border-b border-glass-border/40 py-2.5 last:border-0">
+      <span className="text-caption text-text-2">{label}</span>
+      <Amount value={value} className="font-mono text-caption text-text-0" />
     </div>
   );
 }
 
-/**
- * Initial values come from props, and the panel is keyed on `group_key`, so
- * opening a different trade remounts the form. Copying props into state from
- * an effect would cascade a render on every refetch.
- */
 function Journal({ trade }: { trade: TradeDetail }) {
   const save = useSaveTrade(trade.group_key);
   const [lessons, setLessons] = useState(trade.journal.lessons ?? "");
@@ -55,6 +45,10 @@ function Journal({ trade }: { trade: TradeDetail }) {
 
   return (
     <div className="flex flex-col gap-5">
+      <h3 className="text-h3 font-bold text-text-0 border-b border-glass-border/60 pb-2">
+        Journal & Notes
+      </h3>
+
       <div className="grid grid-cols-3 gap-3">
         <Field label="Planned entry">
           {(id) => (
@@ -73,19 +67,21 @@ function Journal({ trade }: { trade: TradeDetail }) {
         </Field>
       </div>
 
-      <Field label="Why I took it">
+      <Field label="Why I took it (Entry reason)">
         {(id) => (
           <TextArea id={id} value={entryReason} onChange={(e) => setEntryReason(e.target.value)} />
         )}
       </Field>
 
-      <Field label="Lessons">
+      <Field label="Lessons learned">
         {(id) => <TextArea id={id} value={lessons} onChange={(e) => setLessons(e.target.value)} />}
       </Field>
 
       <div className="flex flex-col gap-2">
-        <span className="text-secondary text-slate">Execution</span>
-        <div className="flex gap-2">
+        <span className="text-label uppercase tracking-wider text-text-2 font-medium">
+          Execution Rating
+        </span>
+        <div className="flex gap-2.5">
           {RATINGS.map((value) => (
             <button
               key={value}
@@ -96,11 +92,12 @@ function Journal({ trade }: { trade: TradeDetail }) {
               }}
               aria-label={`Rate execution ${value} of 5`}
               aria-pressed={rating === value}
-              className={`size-11 rounded-[6px] border text-row tabular ${
+              className={cn(
+                "glass flex size-11 items-center justify-center rounded-[10px] font-mono text-body font-bold transition-all select-none",
                 rating === value
-                  ? "border-graphite bg-graphite text-white"
-                  : "border-rule bg-sheet text-graphite hover:bg-fog"
-              }`}
+                  ? "border-violet-500 bg-violet-600/30 text-white shadow-[0_0_12px_rgba(139,92,246,0.4)]"
+                  : "bg-glass-1 text-text-2 hover:bg-glass-2 hover:text-text-0",
+              )}
             >
               {value}
             </button>
@@ -108,13 +105,13 @@ function Journal({ trade }: { trade: TradeDetail }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <Button onClick={onSave} disabled={save.isPending} size="md">
-          {save.isPending ? "Saving…" : "Save"}
+      <div className="flex items-center gap-3 pt-2">
+        <Button variant="primary" onClick={onSave} loading={save.isPending} size="md">
+          {save.isPending ? "Saving…" : "Save journal"}
         </Button>
         {save.isSuccess && !save.isPending && (
-          <span className="text-secondary text-slate" role="status">
-            Saved
+          <span className="text-caption font-semibold text-profit" role="status">
+            Saved ✓
           </span>
         )}
       </div>
@@ -134,106 +131,153 @@ export function TradeDrawer({
   if (!idOrKey) return null;
 
   return (
-    <div className="fixed inset-0 z-30 flex" role="dialog" aria-modal aria-label="Trade detail">
+    <div
+      className="fixed inset-0 z-40 flex justify-end"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Trade detail drawer"
+    >
+      {/* Backdrop */}
       <button
         type="button"
-        aria-label="Close"
+        aria-label="Close drawer"
         onClick={onClose}
-        className="flex-1 bg-[rgba(26,31,38,0.4)]"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
       />
 
+      {/* Drawer surface */}
       <div
-        className="flex h-full w-full max-w-[560px] flex-col overflow-y-auto bg-sheet
-          shadow-[0_-8px_24px_rgba(26,31,38,0.12)] md:border-l md:border-rule"
+        className={cn(
+          "relative z-50 flex h-full w-full max-w-[580px] flex-col overflow-y-auto",
+          "glass glass--strong border-l border-glass-border-strong bg-bg-1/95 p-6 shadow-2xl backdrop-blur-2xl",
+        )}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-rule p-4">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 border-b border-glass-border/60 pb-5">
           <div className="flex flex-col gap-1">
-            <h2 className="text-section text-graphite">
-              {trade ? trade.tradingsymbol : "Trade"}
+            <h2 className="text-h2 font-bold text-text-0">
+              {trade ? trade.tradingsymbol : "Trade details"}
             </h2>
             {trade && (
-              <p className="text-secondary text-slate">
+              <p className="text-caption text-text-2">
                 {formatDate(trade.trade_date)} · {trade.product} ·{" "}
-                {trade.direction === "LONG" ? "Long" : "Short"}
+                <span className={trade.direction === "LONG" ? "text-profit font-semibold" : "text-loss font-semibold"}>
+                  {trade.direction === "LONG" ? "Long" : "Short"}
+                </span>
               </p>
             )}
           </div>
-          <Button variant="quiet" size="icon" onClick={onClose} aria-label="Close">
-            <X size={20} aria-hidden />
+          <Button
+            variant="quiet"
+            size="icon-sm"
+            onClick={onClose}
+            aria-label="Close"
+            className="size-9 rounded-full hover:bg-glass-2"
+          >
+            <X size={18} aria-hidden />
           </Button>
         </div>
 
         {isLoading || !trade ? (
-          <div className="flex flex-col gap-4 p-4">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-48 w-full" />
+          <div className="flex flex-col gap-6 py-6">
+            <Skeleton className="h-28 w-full rounded-[16px]" />
+            <Skeleton className="h-64 w-full rounded-[16px]" />
           </div>
         ) : (
-          <div className="flex flex-col gap-8 p-4">
-            <div className="flex flex-wrap items-baseline justify-between gap-4">
-              <Pnl value={trade.net_pnl} className="text-title" />
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-secondary text-slate">
-                <span className="tabular">{trade.qty_max} qty</span>
-                <span className="tabular">
+          <div className="flex flex-col gap-8 py-6">
+            {/* P&L hero banner */}
+            <div className="glass flex flex-wrap items-center justify-between gap-4 p-5 rounded-[16px]">
+              <div className="flex flex-col">
+                <span className="text-[11px] uppercase tracking-wider text-text-2 font-medium">
+                  Net P&L
+                </span>
+                <Pnl value={trade.net_pnl} glow={true} className="font-mono text-h1 font-bold" />
+              </div>
+
+              <div className="flex flex-col gap-1 text-right text-caption text-text-2">
+                <span className="font-mono tabular">{trade.qty_max} qty</span>
+                <span className="font-mono tabular">
                   {formatPrice(trade.avg_entry)} → {formatPrice(trade.avg_exit)}
                 </span>
-                <span className="tabular">{formatDuration(trade.hold_seconds)}</span>
-                <span className="tabular">
-                  {trade.derived.r_multiple ? formatR(trade.derived.r_multiple) : EMPTY}
+                <span className="font-mono tabular">
+                  Hold: {formatDuration(trade.hold_seconds)}
                 </span>
+                {trade.derived?.r_multiple && (
+                  <span className="font-mono tabular font-semibold text-violet-300">
+                    {formatR(trade.derived.r_multiple)}
+                  </span>
+                )}
               </div>
             </div>
 
+            {/* Tags */}
             {trade.tags.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {trade.tags.map((tag) => (
-                  <Chip key={tag.id}>{tag.name}</Chip>
+                  <Chip key={tag.id}>#{tag.name}</Chip>
                 ))}
               </div>
             )}
 
+            {/* Journal editor */}
             <Journal key={trade.group_key} trade={trade} />
 
-            <section className="flex flex-col gap-2">
-              <h3 className="text-section text-graphite">Charges</h3>
+            {/* Charges Breakdown */}
+            <section className="glass flex flex-col gap-2 p-5 rounded-[16px]">
+              <h3 className="text-h3 font-bold text-text-0 mb-1">Charges Breakdown</h3>
               <ChargeRow label="Brokerage" value={trade.charges.brokerage} />
               <ChargeRow label="STT / CTT" value={trade.charges.stt_ctt} />
-              <ChargeRow label="Exchange" value={trade.charges.exchange_txn} />
-              <ChargeRow label="SEBI" value={trade.charges.sebi} />
+              <ChargeRow label="Exchange turnover" value={trade.charges.exchange_txn} />
+              <ChargeRow label="SEBI turnover" value={trade.charges.sebi} />
               <ChargeRow label="Stamp duty" value={trade.charges.stamp} />
               <ChargeRow label="GST" value={trade.charges.gst} />
-              <div className="flex items-baseline justify-between gap-4 pt-2">
-                <span className="text-row text-graphite">Total</span>
-                <Amount value={trade.charges.total} className="text-row text-graphite" />
+              <div className="flex items-baseline justify-between gap-4 pt-3 border-t border-glass-border">
+                <span className="text-body font-semibold text-text-0">Total charges</span>
+                <Amount value={trade.charges.total} className="font-mono text-body font-bold" />
               </div>
             </section>
 
-            <section className="flex flex-col gap-2">
-              <h3 className="text-section text-graphite">Fills</h3>
-              <table className="w-full text-secondary">
-                <thead>
-                  <tr className="border-b border-rule text-left text-caption text-slate">
-                    <th className="py-2 font-normal">Time</th>
-                    <th className="py-2 font-normal">Side</th>
-                    <th className="py-2 text-right font-normal">Qty</th>
-                    <th className="py-2 text-right font-normal">Price</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {trade.fills.map((fill) => (
-                    <tr key={`${fill.id}-${fill.role}`} className="border-b border-rule last:border-0">
-                      <td className="py-2 tabular text-graphite">{formatTime(fill.filled_at)}</td>
-                      <td className="py-2 text-graphite">{fill.side}</td>
-                      <td className="py-2 text-right tabular text-graphite">
-                        {fill.quantity_used}
-                      </td>
-                      <td className="py-2 text-right tabular text-graphite">
-                        {formatPrice(fill.price)}
-                      </td>
+            {/* Fills Table */}
+            <section className="glass flex flex-col gap-3 p-5 rounded-[16px]">
+              <h3 className="text-h3 font-bold text-text-0">Fills Execution</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-caption">
+                  <thead>
+                    <tr className="border-b border-glass-border text-left text-text-2">
+                      <th className="pb-2 font-medium">Time</th>
+                      <th className="pb-2 font-medium">Side</th>
+                      <th className="pb-2 text-right font-medium">Qty</th>
+                      <th className="pb-2 text-right font-medium">Price</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-glass-border/30">
+                    {trade.fills.map((fill) => (
+                      <tr key={`${fill.id}-${fill.role}`}>
+                        <td className="py-2.5 font-mono text-text-1">
+                          {formatTime(fill.filled_at)}
+                        </td>
+                        <td className="py-2.5">
+                          <span
+                            className={
+                              fill.side === "BUY"
+                                ? "font-semibold text-profit"
+                                : "font-semibold text-loss"
+                            }
+                          >
+                            {fill.side}
+                          </span>
+                        </td>
+                        <td className="py-2.5 text-right font-mono tabular text-text-0">
+                          {fill.quantity_used}
+                        </td>
+                        <td className="py-2.5 text-right font-mono tabular text-text-0">
+                          {formatPrice(fill.price)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </section>
           </div>
         )}

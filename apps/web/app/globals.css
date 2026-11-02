@@ -1,132 +1,249 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
 /*
-  TJ design tokens (DESIGN.md 5 and 16).
+  TJ redesign tokens — dark glassmorphism + violet accent.
 
-  Light only in version 1: no `dark:` classes, no theme toggle, no dark
-  tokens. The shadcn variables below are remapped onto these names so stock
-  components inherit the palette without being restyled one by one.
+  This replaces the original light palette. The shadcn variables below are
+  remapped onto these names so stock components inherit the look automatically.
 */
 
 @theme inline {
-  /* TJ palette, usable as bg-chalk, text-graphite, border-rule and so on. */
-  --color-chalk: var(--chalk);
-  --color-sheet: var(--sheet);
-  --color-fog: var(--fog);
-  --color-rule: var(--rule);
-  --color-graphite: var(--graphite);
-  --color-slate: var(--slate);
-  --color-marker: var(--marker);
-  --color-marker-soft: var(--marker-soft);
+  /* TJ palette, usable as bg-bg-0, text-text-0, border-glass-border, etc. */
+  --color-bg-0: var(--bg-0);
+  --color-bg-1: var(--bg-1);
+  --color-bg-2: var(--bg-2);
+
+  --color-glass-1: var(--glass-1);
+  --color-glass-2: var(--glass-2);
+  --color-glass-3: var(--glass-3);
+  --color-glass-border: var(--glass-border);
+  --color-glass-border-strong: var(--glass-border-strong);
+
+  --color-text-0: var(--text-0);
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-text-disabled: var(--text-disabled);
+
+  --color-violet-300: var(--violet-300);
+  --color-violet-400: var(--violet-400);
+  --color-violet-500: var(--violet-500);
+  --color-violet-600: var(--violet-600);
+  --color-violet-700: var(--violet-700);
+
   --color-profit: var(--profit);
-  --color-profit-1: var(--profit-1);
-  --color-profit-2: var(--profit-2);
-  --color-profit-3: var(--profit-3);
+  --color-profit-bg: var(--profit-bg);
   --color-loss: var(--loss);
-  --color-loss-1: var(--loss-1);
-  --color-loss-2: var(--loss-2);
-  --color-loss-3: var(--loss-3);
-  --color-focus: var(--focus);
+  --color-loss-bg: var(--loss-bg);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+  --color-info: var(--info);
+  --color-neutral: var(--neutral);
 
-  /* shadcn's names, pointed at the palette above. */
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
+  /* shadcn's names, pointed at the dark palette. */
+  --color-background: var(--bg-0);
+  --color-foreground: var(--text-0);
+  --color-card: var(--glass-1);
+  --color-card-foreground: var(--text-0);
+  --color-popover: var(--glass-3);
+  --color-popover-foreground: var(--text-0);
+  --color-primary: var(--violet-500);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--glass-1);
+  --color-secondary-foreground: var(--text-0);
+  --color-muted: var(--glass-1);
+  --color-muted-foreground: var(--text-2);
+  --color-accent: var(--violet-700);
+  --color-accent-foreground: var(--text-0);
+  --color-destructive: var(--loss);
+  --color-border: var(--glass-border);
+  --color-input: var(--glass-border);
+  --color-ring: var(--violet-400);
 
-  --font-sans: var(--font-plex);
-  --font-condensed: var(--font-plex-condensed);
-  --font-heading: var(--font-plex);
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-heading: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
-  /* Type scale (DESIGN.md 6). */
+  /* Type scale (spec §5). */
   --text-display: 2.5rem;
   --text-display--line-height: 2.75rem;
-  --text-display--font-weight: 600;
-  --text-display--letter-spacing: -0.01em;
-  --text-title: 1.5rem;
-  --text-title--line-height: 1.875rem;
-  --text-title--font-weight: 600;
-  --text-title--letter-spacing: -0.01em;
-  --text-section: 1.125rem;
-  --text-section--line-height: 1.5rem;
-  --text-section--font-weight: 600;
-  --text-body: 1rem;
-  --text-body--line-height: 1.5rem;
-  --text-row: 1rem;
-  --text-row--line-height: 1.375rem;
-  --text-row--font-weight: 500;
-  --text-secondary: 0.875rem;
-  --text-secondary--line-height: 1.25rem;
-  --text-caption: 0.75rem;
-  --text-caption--line-height: 1rem;
-  --text-figure: 0.8125rem;
-  --text-figure--line-height: 1rem;
-  --text-figure--font-weight: 600;
+  --text-display--font-weight: 700;
+  --text-display--letter-spacing: -0.02em;
+  --text-h1: 1.75rem;
+  --text-h1--line-height: 2.125rem;
+  --text-h1--font-weight: 650;
+  --text-h2: 1.25rem;
+  --text-h2--line-height: 1.75rem;
+  --text-h2--font-weight: 600;
+  --text-h3: 1rem;
+  --text-h3--line-height: 1.5rem;
+  --text-h3--font-weight: 600;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.375rem;
+  --text-body--font-weight: 450;
+  --text-label: 0.75rem;
+  --text-label--line-height: 1rem;
+  --text-label--font-weight: 500;
+  --text-label--letter-spacing: 0.04em;
+  /* Metadata under a row, pill text, axis ticks. Used in ~34 places and
+     previously undefined, so every one of them inherited its parent's size
+     and crowded the layout. */
+  --text-caption: 0.6875rem;
+  --text-caption--line-height: 0.9375rem;
+  --text-caption--font-weight: 500;
+  --text-mono-lg: 1.25rem;
+  --text-mono-lg--line-height: 1.75rem;
+  --text-mono-lg--font-weight: 600;
+  --text-mono-sm: 0.8125rem;
+  --text-mono-sm--line-height: 1.125rem;
+  --text-mono-sm--font-weight: 500;
 
-  /* Radius varies by role, not one value for everything (DESIGN.md 7). */
-  --radius-sm: 6px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
-  --radius-xl: 16px;
-  --radius-2xl: 20px;
+  /* Radius varies by role (spec §4). */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
 }
 
 :root {
+  color-scheme: dark;
+
+  /* ---------- Canvas ---------- */
+  --bg-0: #07060d;
+  --bg-1: #0d0b17;
+  --bg-2: #131022;
+
+  /* ---------- Glass surfaces ---------- */
+  --glass-1: rgba(255, 255, 255, 0.04);
+  --glass-2: rgba(255, 255, 255, 0.07);
+  --glass-3: rgba(255, 255, 255, 0.11);
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-border-strong: rgba(255, 255, 255, 0.16);
+  --glass-highlight: rgba(255, 255, 255, 0.18);
+  --blur-sm: 8px;
+  --blur-md: 16px;
+  --blur-lg: 28px;
+
+  /* ---------- Text ---------- */
+  --text-0: #f4f2ff;
+  --text-1: #b9b4d6;
+  --text-2: #7d7899;
+  --text-disabled: #55516d;
+
+  /* ---------- Brand violet ---------- */
+  --violet-300: #c4b5fd;
+  --violet-400: #a78bfa;
+  --violet-500: #8b5cf6;
+  --violet-600: #7c3aed;
+  --violet-700: #6d28d9;
+  --accent-gradient: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  --accent-glow: 0 0 0 1px rgba(139, 92, 246, 0.5), 0 8px 32px -4px rgba(139, 92, 246, 0.45);
+  --focus-ring: 0 0 0 2px var(--bg-0), 0 0 0 4px var(--violet-400);
+
+  /* ---------- Semantic ---------- */
+  --profit: #34d399;
+  --profit-bg: rgba(52, 211, 153, 0.12);
+  --profit-glow: 0 0 24px rgba(52, 211, 153, 0.35);
+  --loss: #fb7185;
+  --loss-bg: rgba(251, 113, 133, 0.12);
+  --loss-glow: 0 0 24px rgba(251, 113, 133, 0.35);
+  --warn: #fbbf24;
+  --warn-bg: rgba(251, 191, 36, 0.12);
+  --info: #60a5fa;
+  --neutral: #94a3b8;
+
+  /* ---------- Spacing (4px base) ---------- */
+  --s-1: 4px;
+  --theme-marker: "dark";
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+
+  /* ---------- Shadows ---------- */
+  --shadow-1: 0 1px 0 0 var(--glass-highlight) inset, 0 8px 24px -12px rgba(0,0,0,.6);
+  --shadow-2: 0 1px 0 0 var(--glass-highlight) inset, 0 20px 48px -16px rgba(0,0,0,.7);
+  --shadow-3: 0 1px 0 0 var(--glass-highlight) inset, 0 32px 80px -20px rgba(0,0,0,.8);
+
+  /* ---------- Motion ---------- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 120ms;
+  --dur-base: 220ms;
+  --dur-slow: 400ms;
+  --dur-page: 480ms;
+
+  /* ---------- Layout ---------- */
+  --sidebar-w: 264px;
+  --sidebar-w-collapsed: 80px;
+  --topbar-h: 72px;
+  --content-max: 1120px;
+}
+
+/*
+  Light theme.
+
+  `@theme inline` maps every --color-* to a raw var(), so overriding the raw
+  values here is enough — no utility needs to change. "Glass" becomes a tinted
+  paper surface rather than a translucent white film, which is why the glass
+  vars get dark-on-light alphas instead of inverted whites.
+
+  Applied by [data-theme="light"] on <html>, set before paint by the script in
+  layout.tsx so there is no flash of the wrong theme.
+*/
+:root[data-theme="light"] {
   color-scheme: light;
+  --theme-marker: "light";
 
-  --chalk: #f4f6f8;
-  --sheet: #ffffff;
-  --fog: #eaeef2;
-  --rule: #d9dfe6;
-  --graphite: #1a1f26;
-  --slate: #55606e;
-  --marker: #ffe27a;
-  --marker-soft: #fff3c4;
-  --profit: #0f7a55;
-  --profit-1: #e3f3ec;
-  --profit-2: #bfe3d1;
-  --profit-3: #8ccbae;
-  --loss: #b8322a;
-  --loss-1: #fbe7e4;
-  --loss-2: #f4c4be;
-  --loss-3: #ea9a91;
-  --focus: #2457d6;
+  /* ---------- Canvas ---------- */
+  --bg-0: #f7f6fb;
+  --bg-1: #ffffff;
+  --bg-2: #f1eff8;
 
-  --background: var(--chalk);
-  --foreground: var(--graphite);
-  --card: var(--sheet);
-  --card-foreground: var(--graphite);
-  --popover: var(--sheet);
-  --popover-foreground: var(--graphite);
-  --primary: var(--graphite);
-  --primary-foreground: #ffffff;
-  --secondary: var(--fog);
-  --secondary-foreground: var(--graphite);
-  --muted: var(--fog);
-  --muted-foreground: var(--slate);
-  --accent: var(--marker-soft);
-  --accent-foreground: var(--graphite);
-  --destructive: var(--loss);
-  --border: var(--rule);
-  --input: var(--rule);
-  --ring: var(--focus);
-  --radius: 0.625rem;
+  /* ---------- Paper surfaces (the light counterpart of glass) ---------- */
+  --glass-1: rgba(17, 12, 46, 0.035);
+  --glass-2: rgba(17, 12, 46, 0.06);
+  --glass-3: rgba(17, 12, 46, 0.09);
+  --glass-border: rgba(17, 12, 46, 0.12);
+  --glass-border-strong: rgba(17, 12, 46, 0.2);
+  --glass-highlight: rgba(255, 255, 255, 0.9);
+
+  /* ---------- Text ---------- */
+  --text-0: #16132a;
+  --text-1: #4a4568;
+  --text-2: #6f6a8a;
+  --text-disabled: #a9a5bd;
+
+  /* ---------- Brand violet: darker, so it passes contrast on paper ------- */
+  --violet-300: #7c3aed;
+  --violet-400: #6d28d9;
+  --violet-500: #6025c9;
+  --violet-600: #541fb0;
+  --violet-700: #431a8c;
+  --accent-glow: 0 0 0 1px rgba(109, 40, 217, 0.35), 0 8px 24px -6px rgba(109, 40, 217, 0.3);
+  --focus-ring: 0 0 0 2px var(--bg-0), 0 0 0 4px var(--violet-400);
+
+  /* ---------- Semantic: deepened for contrast, glows softened ---------- */
+  --profit: #047857;
+  --profit-bg: rgba(4, 120, 87, 0.1);
+  --profit-glow: 0 0 0 rgba(0, 0, 0, 0);
+  --loss: #be123c;
+  --loss-bg: rgba(190, 18, 60, 0.09);
+  --loss-glow: 0 0 0 rgba(0, 0, 0, 0);
+  --warn: #a16207;
+  --warn-bg: rgba(161, 98, 7, 0.1);
+  --info: #1d4ed8;
+  --neutral: #52525b;
 }
 
 @layer base {
@@ -136,30 +253,27 @@
 
   html {
     @apply font-sans;
-    /* Never 100vh: mobile browser chrome makes it lie (DESIGN.md 7). */
     min-height: 100dvh;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-size: 1rem;
-    line-height: 1.5rem;
+    font-size: 0.875rem;
+    line-height: 1.375rem;
   }
 
-  /* Colour is never the only signal, and numbers always line up
-     (DESIGN.md 5 and 6). */
+  /* Tabular numerals for all numbers (spec §5). */
   .tabular {
     font-variant-numeric: tabular-nums;
   }
 
-  /* 2 px focus ring with 2 px offset on everything interactive
-     (DESIGN.md 15). */
+  /* Visible focus ring on every interactive element (spec §16). */
   :focus-visible {
-    outline: 2px solid var(--focus);
-    outline-offset: 2px;
+    outline: none;
+    box-shadow: var(--focus-ring);
   }
 
-  /* Inputs at 16 px or iOS Safari zooms on focus (DESIGN.md 6). */
+  /* Inputs at 16 px or iOS Safari zooms on focus. */
   input,
   select,
   textarea {
@@ -168,36 +282,259 @@
 }
 
 @layer utilities {
-  /* Holidays in the calendar: a hatch, not a colour (DESIGN.md 5). */
+  /* ---- Glass surface recipe (spec §6) ---- */
+  .glass {
+    position: relative;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.07) 0%,
+      rgba(255, 255, 255, 0.02) 100%
+    );
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(var(--blur-md)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--blur-md)) saturate(140%);
+    box-shadow: var(--shadow-1);
+    transition: transform var(--dur-base) var(--ease-out),
+      background var(--dur-base) var(--ease-out),
+      border-color var(--dur-base) var(--ease-out),
+      box-shadow var(--dur-base) var(--ease-out);
+  }
+
+  /* Gradient hairline border using mask (spec §6). */
+  .glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      160deg,
+      rgba(255, 255, 255, 0.28),
+      rgba(255, 255, 255, 0) 40%,
+      rgba(139, 92, 246, 0.25)
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .glass--interactive:hover {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.03)
+    );
+    border-color: var(--glass-border-strong);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-2), 0 0 40px -10px rgba(139, 92, 246, 0.35);
+  }
+
+  .glass--strong {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.11),
+      rgba(255, 255, 255, 0.04)
+    );
+  }
+
+  /* Solid fallback for browsers without backdrop-filter (spec §6). */
+  @supports not (backdrop-filter: blur(1px)) {
+    .glass {
+      background: #17142a;
+    }
+  }
+
+  /* ---- Holiday hatching ---- */
   .hatched {
     background-image: repeating-linear-gradient(
       45deg,
-      var(--rule) 0,
-      var(--rule) 1px,
+      rgba(255, 255, 255, 0.05) 0,
+      rgba(255, 255, 255, 0.05) 1px,
       transparent 1px,
       transparent 5px
     );
   }
 
-  /* The one signature moment: new rows flash after a sync and fade over
-     800 ms (DESIGN.md 11). Reduced motion gets a static dot instead. */
+  /* ---- Skeleton shimmer (spec §9.9) ---- */
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--glass-1) 25%,
+      rgba(139, 92, 246, 0.08) 50%,
+      var(--glass-1) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+
+  /* ---- Sync flash ---- */
   @keyframes marker-flash {
     from {
-      background-color: var(--marker);
+      background-color: rgba(139, 92, 246, 0.2);
     }
     to {
       background-color: transparent;
     }
   }
-
   .flash-new {
     animation: marker-flash 800ms ease-out;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .flash-new {
-      animation: none;
-      background-color: var(--marker-soft);
+  /* ---- Page entrance ----
+     Deliberately a CSS animation rather than a motion transform, and
+     deliberately without `forwards`: once it ends the element keeps no
+     transform and no filter. Either of those would make the wrapper a
+     containing block for `position: sticky` descendants, which silently
+     re-anchors the trades filter bar to the wrapper instead of the viewport
+     and drops it on top of the rows. */
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
     }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .page-enter {
+    animation: page-enter 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .page-enter {
+      animation: none;
+    }
+  }
+
+  /* ---- Pulsing dot (login status, today ring) ---- */
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.4);
+      opacity: 0.5;
+    }
+  }
+  .pulse-dot {
+    animation: pulse-dot 1.8s ease-in-out infinite;
+  }
+
+  /* ---- Today ring breathing (spec §10.1) ---- */
+  @keyframes breathe {
+    0%,
+    100% {
+      box-shadow: 0 0 0 2px var(--violet-500), 0 0 12px 2px rgba(139, 92, 246, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 0 3px var(--violet-400), 0 0 20px 4px rgba(139, 92, 246, 0.45);
+    }
+  }
+  .ring-breathe {
+    animation: breathe 2.4s ease-in-out infinite;
+  }
+
+  /* ---- Aurora background blobs (spec §7) ---- */
+  @keyframes aurora-drift-1 {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    33% {
+      transform: translate(5%, -4%) scale(1.06);
+    }
+    66% {
+      transform: translate(-3%, 6%) scale(0.94);
+    }
+  }
+  @keyframes aurora-drift-2 {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    33% {
+      transform: translate(-6%, 3%) scale(0.95);
+    }
+    66% {
+      transform: translate(4%, -5%) scale(1.07);
+    }
+  }
+  @keyframes aurora-drift-3 {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    33% {
+      transform: translate(3%, 5%) scale(1.04);
+    }
+    66% {
+      transform: translate(-4%, -3%) scale(0.96);
+    }
+  }
+
+  /* ---- Spin for sync (existing tw-animate utility) ---- */
+  .animate-spin-slow {
+    animation: spin 1.2s linear infinite;
+  }
+
+  /* ---- Cursor spotlight on cards (spec §11.4) ---- */
+  .spotlight {
+    --mx: 50%;
+    --my: 50%;
+    position: relative;
+  }
+  .spotlight::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+      400px circle at var(--mx) var(--my),
+      rgba(139, 92, 246, 0.12),
+      transparent 60%
+    );
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--dur-base) var(--ease-out);
+  }
+  .spotlight:hover::after {
+    opacity: 1;
+  }
+
+  /* ---- Profit/loss text glow ---- */
+  .glow-profit {
+    text-shadow: 0 0 20px rgba(52, 211, 153, 0.4);
+  }
+  .glow-loss {
+    text-shadow: 0 0 20px rgba(251, 113, 133, 0.4);
+  }
+}
+
+/* ---- Reduced motion (spec §11.9) ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .flash-new {
+    animation: none;
+    background-color: rgba(139, 92, 246, 0.1);
   }
 }

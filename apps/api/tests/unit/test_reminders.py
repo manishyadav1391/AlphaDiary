@@ -346,3 +346,41 @@ def test_a_disabled_channel_is_not_used(
 def test_quiet_hours(hour: int, expected: bool) -> None:
     """FR-REM-11: nothing between 22:00 and 07:00 IST."""
     assert reminders.in_quiet_hours(at(hour, 0)) is expected
+
+
+# ------------------------------------------------------- FR-REM-11 in `tick`
+#
+# `test_quiet_hours` above exercises `in_quiet_hours()` alone, which is why the
+# suppression branch inside `tick` went wrong unnoticed. These two pin the
+# behaviour the SRS actually specifies: the quiet window silences the slots
+# outside it, and a slot deliberately placed inside it still sends.
+
+
+def test_a_pre_quiet_slot_is_silenced_once_the_window_opens(
+    session: Session, channel: FakeChannel, token_invalid: None
+) -> None:
+    """FR-REM-11: a 21:50 slot dragged past 22:00 by its grace must not send."""
+    reminders.save_slots(
+        session,
+        [{"name": "late_catchup", "time": "21:50", "kind": "reminder", "enabled": True}],
+    )
+
+    reminders.tick(session, at(22, 5))
+
+    assert channel.sent == []
+    assert [row.status for row in logs(session)] == ["skipped_user"]
+
+
+def test_a_slot_inside_the_quiet_window_still_sends(
+    session: Session, channel: FakeChannel, token_invalid: None
+) -> None:
+    """FR-REM-11: quiet hours yield to a slot deliberately set inside them."""
+    reminders.save_slots(
+        session,
+        [{"name": "late_catchup", "time": "22:30", "kind": "reminder", "enabled": True}],
+    )
+
+    reminders.tick(session, at(22, 30))
+
+    assert len(channel.sent) == 1
+    assert [row.status for row in logs(session)] == ["sent"]

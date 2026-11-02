@@ -1,15 +1,15 @@
 import { cn } from "@/lib/utils";
 
 /**
- * A fog block the exact size of the content it stands in for, with a very
- * subtle pulse that stops under reduced motion (DESIGN.md 9 and 11).
+  Design spec §9.9:
+  Glass blocks with shimmering violet-tinted gradient sweep (1.4s loop).
  */
 export function Skeleton({ className }: { className?: string }) {
   return (
     <div
       aria-hidden
       className={cn(
-        "rounded-[6px] bg-fog motion-safe:animate-pulse",
+        "rounded-[12px] border border-glass-border/40 skeleton-shimmer",
         className,
       )}
     />

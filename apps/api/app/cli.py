@@ -144,16 +144,31 @@ def _seed_reminders(session_factory: Callable[[], Session]) -> None:
             reminders.save_slots(session, reminders.DEFAULT_SLOTS)
             print(f"Seeded {len(reminders.DEFAULT_SLOTS)} reminder slots.")
 
+        # The destination and the enabled flag are re-applied on every run.
+        # Skipping an existing row latched a first seed that ran before
+        # REMINDER_EMAIL_TO was set: the channel stayed disabled forever and
+        # re-running seed could not repair it, so no reminder ever sent and
+        # nothing said why.
+        destination = settings.reminder_email_to
         existing = session.get(NotificationChannel, "email")
         if existing is None:
             session.add(
                 NotificationChannel(
                     channel="email",
-                    enabled=bool(settings.reminder_email_to),
-                    config_enc=encrypt(_json.dumps({"to": settings.reminder_email_to})),
+                    enabled=bool(destination),
+                    config_enc=encrypt(_json.dumps({"to": destination})),
                 )
             )
-            print(f"Seeded the email channel for {settings.reminder_email_to or 'nobody'}.")
+            print(f"Seeded the email channel for {destination or 'nobody'}.")
+        elif destination:
+            existing.enabled = True
+            existing.config_enc = encrypt(_json.dumps({"to": destination}))
+            print(f"Updated the email channel to {destination}.")
+        else:
+            print(
+                "REMINDER_EMAIL_TO is empty, so the email channel is left as it is. "
+                "Set it and re-run seed, or no reminder can send."
+            )
         session.commit()
     finally:
         session.close()

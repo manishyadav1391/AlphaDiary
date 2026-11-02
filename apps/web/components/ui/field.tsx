@@ -1,19 +1,28 @@
 "use client";
 
-import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
+import { ChevronDown } from "lucide-react";
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from "react";
 import { useId } from "react";
 
 import { cn } from "@/lib/utils";
 
 /*
-  DESIGN.md 9 and 15: 48 px high, white, 1 px rule border, radius 6, 16 px
-  text. Every field has a visible label — never a placeholder standing in for
-  one — and errors read below the field.
+  Design spec §9.4:
+  Height 48px, glass-1 background (never plain white!),
+  border glass-border, radius 12px, text-0, placeholder text-2.
+  Focus: border violet-400, violet glow ring.
 */
 
 const control =
-  "h-12 w-full rounded-[6px] border border-rule bg-sheet px-3 text-body " +
-  "text-graphite placeholder:text-slate/70 disabled:opacity-50";
+  "h-12 w-full rounded-[12px] border border-glass-border bg-glass-1 px-4 text-body text-text-0 " +
+  "placeholder:text-text-2 backdrop-blur-sm transition-all duration-200 " +
+  "focus:border-violet-400/80 focus:bg-glass-2 focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:ring-offset-2 focus:ring-offset-bg-0 " +
+  "disabled:opacity-40 disabled:cursor-not-allowed";
 
 export function Field({
   label,
@@ -30,13 +39,13 @@ export function Field({
   const messageId = error || hint ? `${id}-message` : undefined;
 
   return (
-    <div className="flex flex-col gap-2">
-      <label htmlFor={id} className="text-secondary text-slate">
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-label text-text-2 font-medium tracking-wide">
         {label}
       </label>
       {children(id, messageId)}
       {(error || hint) && (
-        <p id={messageId} className={cn("text-secondary", error ? "text-loss" : "text-slate")}>
+        <p id={messageId} className={cn("text-caption transition-opacity", error ? "text-loss" : "text-text-2")}>
           {error ?? hint}
         </p>
       )}
@@ -51,7 +60,7 @@ export function TextInput({
 }: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }) {
   return (
     <input
-      className={cn(control, invalid && "border-loss", className)}
+      className={cn(control, invalid && "border-loss focus:ring-loss/40", className)}
       aria-invalid={invalid || undefined}
       {...props}
     />
@@ -60,13 +69,28 @@ export function TextInput({
 
 export function NumberInput({
   className,
+  prefix,
   ...props
-}: InputHTMLAttributes<HTMLInputElement>) {
+}: InputHTMLAttributes<HTMLInputElement> & { prefix?: string }) {
+  if (prefix) {
+    return (
+      <div className="relative flex items-center">
+        <span className="pointer-events-none absolute left-4 text-text-2 font-mono select-none">
+          {prefix}
+        </span>
+        <input
+          inputMode="decimal"
+          className={cn(control, "pl-9 tabular font-mono text-left", className)}
+          {...props}
+        />
+      </div>
+    );
+  }
+
   return (
     <input
-      // Brings up the decimal keypad on phones (DESIGN.md 9).
       inputMode="decimal"
-      className={cn(control, "tabular text-right", className)}
+      className={cn(control, "tabular font-mono text-left", className)}
       {...props}
     />
   );
@@ -80,11 +104,35 @@ export function TextArea({
     <textarea
       className={cn(
         control,
-        // Long text caps at about 70 characters a line (DESIGN.md 6).
-        "h-auto min-h-24 max-w-[70ch] resize-y py-3 leading-6",
+        "h-auto min-h-24 max-w-[70ch] py-3 leading-6 resize-y",
         className,
       )}
       {...props}
     />
+  );
+}
+
+export function SelectInput({
+  className,
+  children,
+  ...props
+}: SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <div className="relative">
+      <select
+        // Native, so phones get the OS picker and keyboard and screen-reader
+        // behaviour come for free.
+        className={cn(control, "appearance-none pr-11", className)}
+        {...props}
+      >
+        {children}
+      </select>
+      <ChevronDown
+        size={18}
+        strokeWidth={1.75}
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-4 my-auto text-text-2"
+      />
+    </div>
   );
 }

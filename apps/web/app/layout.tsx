@@ -1,27 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Sans_Condensed } from "next/font/google";
 
 import { Providers } from "@/app/providers";
 import "./globals.css";
-
-/*
-  IBM Plex Sans, with its condensed sibling for dense figures on narrow
-  screens (DESIGN.md 6). No separate display face and no monospace: hierarchy
-  comes from size, weight and space.
-*/
-const plex = IBM_Plex_Sans({
-  variable: "--font-plex",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  display: "swap",
-});
-
-const plexCondensed = IBM_Plex_Sans_Condensed({
-  variable: "--font-plex-condensed",
-  subsets: ["latin"],
-  weight: ["500", "600"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Trading journal",
@@ -32,14 +12,35 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#F4F6F8",
-  colorScheme: "light",
+  // Both themes are supported; the browser picks the matching chrome.
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#07060d" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f6fb" },
+  ],
 };
+
+/*
+  Runs before first paint so the page never flashes the wrong theme.
+
+  It has to be inline and synchronous: anything deferred would paint the
+  default palette first. Kept deliberately tiny, and wrapped in try/catch
+  because localStorage throws in a private window with site data blocked.
+*/
+const THEME_SCRIPT = `(function(){try{
+var c=localStorage.getItem("tj:theme")||"system";
+var d=c==="dark"||(c==="system"&&!window.matchMedia("(prefers-color-scheme: light)").matches);
+var t=d?"dark":"light";
+document.documentElement.dataset.theme=t;
+document.documentElement.style.colorScheme=t;
+}catch(e){document.documentElement.dataset.theme="dark";}})();`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${plex.variable} ${plexCondensed.variable} h-full`}>
-      <body className="min-h-full">
+    <html lang="en" className="h-full" data-theme="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
+      <body className="min-h-full font-sans antialiased bg-bg-0 text-text-0">
         <Providers>{children}</Providers>
       </body>
     </html>

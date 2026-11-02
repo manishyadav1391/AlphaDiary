@@ -940,7 +940,7 @@ My AWS account was created after 15 July 2025, so it is on the **Free Plan**: cr
 3. Security group: SSH (22) from my IP only, 80 and 443 open (or none if I use Tailscale or a tunnel).
 4. Add a 2 GB swap file. Install Docker. Never build images on the server.
 5. Point a DNS name to the server. Check whether an Elastic IP or public IPv4 address uses credits.
-6. Copy `.env`, `docker-compose.yml` and `Caddyfile`, then `docker compose pull && docker compose up -d`.
+6. Copy `.env`, `docker-compose.yml`, `Caddyfile` and the `seed/` directory, then `docker compose pull && docker compose up -d`. **`seed/` is required:** the API image is built from `apps/api`, so the repo-root seed files are outside its build context and are bind-mounted instead. Without them `app.cli seed` fails with `Not found: /srv/seed/charge_rates.json`. Note that `docker compose restart` does not pick up a new volume — use `up -d`.
 7. Register `https://<domain>/api/v1/kite/callback` as the redirect URL in the Kite Developer Console.
 8. Put **screenshots and backups in a bucket on another provider** (Cloudflare R2 or Backblaze B2), so closing the AWS account cannot delete them.
 9. Calendar reminders at month 4 and month 5: decide to upgrade to Paid or migrate (section 11.6).

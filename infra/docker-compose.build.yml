@@ -1,0 +1,40 @@
+# Build the images on the server instead of pulling them.
+#
+#   docker compose -f docker-compose.yml -f infra/docker-compose.build.yml up -d --build
+#
+# SRS 11.3 says CI builds tj-api and tj-web and pushes them to GHCR, and
+# docker-compose.yml pulls them by tag. That pipeline does not exist yet:
+# there is no .github/ in this repo, so `docker compose pull` resolves
+# ghcr.io/${GHCR_OWNER}/... to an image that was never published (and, with
+# GHCR_OWNER unset, to the invalid reference "ghcr.io//tj-api:latest").
+#
+# This overlay supplies the `build:` sections the production file deliberately
+# omits, so a single-host deployment can go from a git checkout to a running
+# stack without a registry. Delete it once CI publishes images.
+#
+# It must be passed explicitly with -f. It is NOT named docker-compose.override.yml
+# on purpose: that name is picked up automatically, which would silently turn
+# every local `docker compose up` into a rebuild.
+#
+# Needs ~2 GB of RAM to build the web image. The t3.small in SRS 11.2 has
+# exactly 2 GB, which is why infra/bootstrap.sh adds a swapfile; build with the
+# swap in place or the Next.js build gets OOM-killed.
+
+services:
+  api:
+    build:
+      context: ./apps/api
+      target: prod
+    image: tj-api:local
+
+  worker:
+    build:
+      context: ./apps/api
+      target: prod
+    image: tj-api:local
+
+  web:
+    build:
+      context: ./apps/web
+      target: prod
+    image: tj-web:local

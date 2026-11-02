@@ -125,14 +125,34 @@ def _parse_time(value: str) -> dt.time:
     return dt.time(int(hour), int(minute))
 
 
+def _quiet_window() -> tuple[dt.time, dt.time]:
+    settings = get_settings()
+    return (
+        _parse_time(settings.quiet_hours_start_ist),
+        _parse_time(settings.quiet_hours_end_ist),
+    )
+
+
+def _within_quiet_window(value: dt.time) -> bool:
+    start, end = _quiet_window()
+    # The window crosses midnight.
+    return value >= start or value < end
+
+
 def in_quiet_hours(now: dt.datetime) -> bool:
     """FR-REM-11: nothing between 22:00 and 07:00 IST."""
-    settings = get_settings()
-    start = _parse_time(settings.quiet_hours_start_ist)
-    end = _parse_time(settings.quiet_hours_end_ist)
-    local = now.astimezone(IST).time()
-    # The window crosses midnight.
-    return local >= start or local < end
+    return _within_quiet_window(now.astimezone(IST).time())
+
+
+def slot_is_deliberately_quiet(slot: Slot) -> bool:
+    """
+    Whether a slot sits inside the quiet window on purpose.
+
+    FR-REM-11 silences the window "unless a slot is explicitly set inside it",
+    so such a slot is exempt from the suppression rather than its first
+    casualty.
+    """
+    return _within_quiet_window(slot.at)
 
 
 # ----------------------------------------------------------------- channels
@@ -152,7 +172,14 @@ def enabled_channels(session: Session) -> list[Channel]:
     return channels
 
 
-def _destination(row: NotificationChannel) -> str | None:
+def destination_for(row: NotificationChannel) -> str | None:
+    """
+    The channel's destination, or None when it has never been configured.
+
+    Raises EncryptionKeyError if the stored config cannot be decrypted, so the
+    Settings screen can say "APP_ENCRYPTION_KEY changed" rather than showing an
+    empty box. The tick uses `_destination`, which swallows that instead.
+    """
     if not row.config_enc:
         return None
     from json import JSONDecodeError, loads
@@ -165,6 +192,27 @@ def _destination(row: NotificationChannel) -> str | None:
         return None
     value = config.get("to")
     return str(value) if value else None
+
+
+def _destination(row: NotificationChannel) -> str | None:
+    """
+    The tick's view: a destination it cannot read is simply absent.
+
+    EncryptionKeyError is a RuntimeError, so it used to escape here, get
+    swallowed by the worker's blanket handler and kill every reminder once a
+    minute — while the heartbeat kept reporting the worker healthy. The channel
+    is now recorded as failed instead, which is visible in the notification log.
+    """
+    from app.security import EncryptionKeyError
+
+    try:
+        return destination_for(row)
+    except EncryptionKeyError:
+        logger.warning(
+            "reminder_channel_unreadable",
+            extra={"event": "reminder_channel_unreadable", "status_code": 0},
+        )
+        return None
 
 
 # --------------------------------------------------------------- the tick
@@ -280,7 +328,10 @@ def tick(
                 actions.append(f"{slot.name}/{channel.name}:skipped_token_valid")
                 continue
 
-            if in_quiet_hours(now) and slot.at >= dt.time(22, 0):
+            # FR-REM-11. A slot placed inside the quiet window is exempt; the
+            # suppression is for the ones whose grace dragged them in, such as
+            # a 21:00 catch-up still due at 22:05.
+            if in_quiet_hours(now) and not slot_is_deliberately_quiet(slot):
                 record(session, slot_key, channel.name, slot.kind, "skipped_user", now=now)
                 continue
 

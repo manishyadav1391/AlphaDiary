@@ -270,3 +270,195 @@ export interface Playbook {
   review_done: boolean;
   actual: PlanVersusActual;
 }
+
+/* ---------------------------------------------------------------- Kite */
+
+export interface KiteLoginUrl {
+  login_url: string;
+  /** Shown so it can be registered in the Kite Developer Console (FR-KITE-09). */
+  redirect_url: string;
+}
+
+/* -------------------------------------------------------------- Import */
+
+export type ImportProduct = "MIS" | "CNC" | "NRML";
+
+export interface ImportRejection {
+  row: number;
+  reason: string;
+}
+
+/**
+ * A row of `ImportReport.preview`. The shape is fixed by the service
+ * (services/importer.py), not by the CSV's own columns.
+ */
+export interface ImportPreviewRow {
+  trade_date: string;
+  symbol: string;
+  exchange: string;
+  side: string;
+  quantity: number;
+  /** A string: money never becomes a JS number before display. */
+  price: string;
+  product: string;
+  trade_id: string;
+}
+
+/**
+ * Mirrors ImportReportOut (schemas/importer.py).
+ *
+ * NOTE: `preview()` writes nothing to the database, so on a PREVIEW response
+ * `rows_new`, `rows_dup` and `unresolved_symbols` are always 0/empty — they
+ * are filled only by an actual import. Do not render them on the preview step.
+ */
+export interface ImportReport {
+  batch_id: string | null;
+  rows_read: number;
+  rows_new: number;
+  rows_dup: number;
+  rows_rejected: number;
+  date_from: string | null;
+  date_to: string | null;
+  columns: string[];
+  symbols: string[];
+  products: Record<string, number>;
+  unresolved_symbols: string[];
+  rows_without_timestamp: number;
+  reassigned_trade_ids: number;
+  rejections: ImportRejection[];
+  preview: ImportPreviewRow[];
+}
+
+/* ------------------------------------------------------------- settings */
+
+export interface KiteSettings {
+  api_key_masked: string | null;
+  has_secret: boolean;
+  /** Register this in the Kite Developer Console (FR-KITE-09). */
+  redirect_url: string;
+}
+
+export interface ReminderSlot {
+  name: string;
+  /** "HH:MM" in IST. */
+  time: string;
+  kind: "reminder" | "missed_sync";
+  enabled: boolean;
+}
+
+export interface ReminderSettings {
+  slots: ReminderSlot[];
+  sync_time_ist: string;
+  grace_minutes: number;
+  quiet_hours_start_ist: string;
+  quiet_hours_end_ist: string;
+  skipped_today: boolean;
+}
+
+export interface NotificationChannel {
+  channel: string;
+  enabled: boolean;
+  destination: string | null;
+  configured: boolean;
+  updated_at: string | null;
+}
+
+export interface ChannelTestResult {
+  sent: boolean;
+  destination: string | null;
+  error: string | null;
+}
+
+export interface NotificationLogEntry {
+  id: number;
+  slot_key: string;
+  channel: string;
+  kind: string;
+  status: string;
+  attempts: number;
+  scheduled_for: string | null;
+  sent_at: string | null;
+  error: string | null;
+}
+
+/* ------------------------------------------------------------ analytics */
+
+export interface BucketKpis {
+  trades: number;
+  wins: number;
+  losses: number;
+  net_pnl: string;
+  gross_pnl: string;
+  charges: string;
+  win_rate: string | null;
+  profit_factor: string | null;
+  expectancy: string | null;
+  avg_r: string | null;
+  avg_win: string | null;
+  avg_loss: string | null;
+  /** FR-AN-08: fewer than 20 trades is not a conclusion. */
+  low_sample: boolean;
+}
+
+export interface AnalyticsBucket {
+  label: string;
+  kpis: BucketKpis;
+}
+
+export interface HeatCell {
+  weekday: string;
+  hour: number;
+  trades: number;
+  net_pnl: string;
+}
+
+export interface RHistogramBin {
+  label: string;
+  trades: number;
+}
+
+export interface RiskReport {
+  net_pnl: string;
+  max_drawdown: string;
+  drawdown_from: string | null;
+  drawdown_to: string | null;
+  longest_losing_streak: number;
+  longest_winning_streak: number;
+  largest_win: string | null;
+  largest_loss: string | null;
+  trades_total: number;
+  trades_with_stop: number;
+  avg_planned_risk: string | null;
+  r_histogram: RHistogramBin[];
+  low_sample: boolean;
+}
+
+export interface MistakeCost {
+  tag: string;
+  trades: number;
+  share_of_trades: string;
+  net_pnl: string;
+  avg_net_pnl: string;
+}
+
+export interface Analytics {
+  date_from: string;
+  date_to: string;
+  trades: number;
+  low_sample: boolean;
+  by_strategy: AnalyticsBucket[];
+  by_hour: AnalyticsBucket[];
+  by_weekday: AnalyticsBucket[];
+  heatmap: HeatCell[];
+  by_duration: AnalyticsBucket[];
+  risk: RiskReport | null;
+  mistakes: MistakeCost[];
+}
+
+export interface AnalyticsQuery {
+  date_from?: string;
+  date_to?: string;
+  asset_class?: string[];
+  product?: string[];
+  intraday_only?: boolean;
+}
